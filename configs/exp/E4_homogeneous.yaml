@@ -1,0 +1,7 @@
+# E4: four samples of ONE VLM (T=0.7) instead of four different tools, same number of calls.
+# Calibrate and run exactly like main_gpu.yaml, then compare correlation and coverage at 10%.
+tools:
+  enabled: [vlm_crop@s1, vlm_crop@s2, vlm_crop@s3, vlm_crop@s4]
+agent:
+  policy: all_tools
+  fixed_order: [vlm_crop@s1, vlm_crop@s2, vlm_crop@s3, vlm_crop@s4]

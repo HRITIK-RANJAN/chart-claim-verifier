@@ -1,0 +1,17 @@
+# CPU smoke test of the E4 path: 4 samples of ONE simulated model instead of 4 different tools.
+generator:
+  reports: {calib: 12, dev: 0, test: 12, style_shift: 0}
+decision:
+  min_group_size: 30
+tools:
+  enabled: [sim_vlm_crop@s1, sim_vlm_crop@s2, sim_vlm_crop@s3, sim_vlm_crop@s4]
+agent:
+  policy: all_tools
+  fixed_order: [sim_vlm_crop@s1, sim_vlm_crop@s2, sim_vlm_crop@s3, sim_vlm_crop@s4]
+
+paths:
+  data_dir: data/smoke/generated
+  splits_dir: data/smoke/splits
+  cache_db: cache/smoke.sqlite
+  calibration_dir: calibration_tables/smoke
+  runs_dir: runs/smoke

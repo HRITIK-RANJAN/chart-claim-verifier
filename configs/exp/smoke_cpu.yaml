@@ -1,0 +1,23 @@
+# CPU smoke test: real OCR+pixel tool plus three SIMULATED tools that read the
+# ground truth and add noise. For checking the pipeline end to end on a laptop.
+# Never report numbers from this config as results.
+
+generator:
+  reports: {calib: 12, dev: 0, test: 12, style_shift: 0}
+
+decision:
+  min_group_size: 30
+
+tools:
+  enabled: [ocr_pixel, sim_vlm_table, sim_deplot, sim_vlm_crop]
+
+agent:
+  policy: fixed_order
+  fixed_order: [ocr_pixel, sim_deplot, sim_vlm_table, sim_vlm_crop]
+
+paths:
+  data_dir: data/smoke/generated
+  splits_dir: data/smoke/splits
+  cache_db: cache/smoke.sqlite
+  calibration_dir: calibration_tables/smoke
+  runs_dir: runs/smoke

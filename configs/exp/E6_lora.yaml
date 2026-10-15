@@ -1,0 +1,7 @@
+# E6: the LoRA chart-to-table model as tool 2. Re-calibrate before running (the tool changed).
+models:
+  lora_adapter: checkpoints/lora_chart2table
+paths:
+  calibration_dir: calibration_tables/lora
+tools:
+  enabled: [ocr_pixel, deplot, vlm_table, vlm_crop]

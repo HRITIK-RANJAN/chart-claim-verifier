@@ -1,0 +1,46 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "reportlens"
+version = "0.1.0"
+description = "Uncertainty-aware verification of number-based chart claims in student technical reports"
+requires-python = ">=3.10"
+dependencies = [
+    "numpy>=1.26",
+    "matplotlib>=3.8",
+    "pymupdf>=1.24",
+    "fpdf2>=2.7",
+    "pydantic>=2.5",
+    "pyyaml>=6",
+    "rank-bm25>=0.2.2",
+    "rapidfuzz>=3",
+    "opencv-python-headless>=4.8",
+    "pytesseract>=0.3.10",
+    "pillow>=10",
+]
+
+[project.optional-dependencies]
+# GPU side (Kaggle / Colab T4): VLM tools, DePlot, LoRA fine-tuning.
+gpu = [
+    "torch>=2.3",
+    "transformers>=4.57",
+    "accelerate>=0.34",
+    "peft>=0.13",
+    "bitsandbytes>=0.44",
+    "sentence-transformers>=3",
+]
+dev = ["pytest>=8"]
+
+[project.scripts]
+reportlens = "reportlens.cli:main"
+
+[tool.setuptools.packages.find]
+include = ["reportlens*"]
+
+[tool.setuptools.package-data]
+reportlens = ["agent/prompts/*.txt"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

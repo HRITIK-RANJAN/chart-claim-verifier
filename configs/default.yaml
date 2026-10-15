@@ -1,0 +1,56 @@
+# Defaults (implementation.md §19). Experiment configs in configs/exp/ override these.
+
+seed: 0
+
+paths:
+  data_dir: data/generated
+  cache_db: cache/readings.sqlite
+  calibration_dir: calibration_tables
+  runs_dir: runs
+
+generator:
+  reports: {calib: 60, dev: 30, test: 150, style_shift: 30}
+  figures_per_report: [2, 4]
+  claims_per_figure: [2, 4]
+  planted_deltas: [0.02, 0.05, 0.10, 0.20, 0.50]   # fraction of axis range (D1)
+  hard_share: 0.5                                   # share of charts in the "hard" style (small, compressed, busy)
+  injection_rate: 0.15                              # share of reports with hidden instructions
+  clean_twins: true                                 # E8: also build each injected report without the injection
+
+decision:
+  level_flag: 0.95        # D2
+  level_accept: 0.75
+  eps: 0.005              # D3: disagreement floor, fraction of axis range
+  min_readings: 2         # D4
+  max_accept_margin: 0.03 # never ACCEPT when the error margin is wider than 3% of the axis range
+  max_tool_calls: 8
+  alpha: 0.10             # BH target wrong-flag rate
+  min_group_size: 200     # D6: smaller calibration groups fall back to coarser ones
+  batch_check: true
+
+retrieval:
+  ref_bonus: 10.0         # explicit "Figure N" in the sentence
+  min_score: 0.5          # below this -> NO_FIGURE
+  vocab_match: 80         # rapidfuzz score for series/x to count as "in this figure"
+
+agent:
+  policy: fixed_order     # all_tools | fixed_order | calibration_informed | informed | llm
+  fixed_order: [ocr_pixel, deplot, vlm_table, vlm_crop]
+  ambiguous_rule: either  # two figures fit a sentence: either | top | both | never (see scripts/ambiguous_rules.py)
+  informed:               # the informed policy (agent/planner.py); every number is read from the tool profile
+    min_answer: 0.10        # a tool that answers < 10% of the time here would almost surely refuse: skip it
+    max_wrong_agree: 0.05   # half the 10% wrong-flag target: a pair that agrees wrongly more often is no cross-check
+    min_points: 10          # fewer measurements than this in a situation -> use the pooled ("*") numbers
+    min_figures: 5          # ... and fewer charts than this too: points on one chart share their mistakes
+    min_pair_agreements: 20 # agreements needed before a pair's wrong-agreement rate is trusted
+    big_error: 0.05         # "badly wrong" = off by more than 5% of the axis range (the usual ChartQA tolerance)
+
+tools:
+  enabled: [ocr_pixel, deplot, vlm_table, vlm_crop]
+
+models:
+  vlm: Qwen/Qwen3-VL-4B-Instruct        # D8
+  vlm_fallback: Qwen/Qwen2.5-VL-7B-Instruct
+  deplot: google/deplot
+  lora_adapter: null                    # path after fine-tuning; null = base model
+  dtype: float16                        # T4 has no bf16

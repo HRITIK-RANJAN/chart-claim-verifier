@@ -1,0 +1,22 @@
+# Real tools on a laptop (Apple silicon / MPS): OCR+pixel, DePlot and Qwen3-VL-4B.
+# Small sizes so a full run fits in a few hours. This is the week-2 pilot (E0) plus
+# first E1/E5 numbers; they are real but small, so report them with their intervals.
+generator:
+  reports: {calib: 12, dev: 0, test: 20, style_shift: 0}
+
+decision:
+  min_group_size: 30
+
+tools:
+  enabled: [ocr_pixel, deplot, vlm_table, vlm_crop]
+
+agent:
+  policy: fixed_order
+  fixed_order: [ocr_pixel, deplot, vlm_table, vlm_crop]
+
+paths:
+  data_dir: data/local/generated
+  splits_dir: data/local/splits
+  cache_db: cache/local.sqlite
+  calibration_dir: calibration_tables/local
+  runs_dir: runs/local
