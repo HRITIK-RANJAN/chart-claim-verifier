@@ -50,9 +50,12 @@ class Tool(ABC):
     def _read(self, fig: Figure, q: PointQuery) -> float:
         """Return the value or raise ToolError(code)."""
 
+    def cache_key(self, fig: Figure, q: PointQuery) -> tuple:
+        return (self.name, self.version, image_key(fig.image_path), q.series, q.x)
+
     # -- what callers use -------------------------------------------------------
     def read(self, fig: Figure, q: PointQuery) -> Reading:
-        key = (self.name, self.version, image_key(fig.image_path), q.series, q.x)
+        key = self.cache_key(fig, q)
         if self.cache is not None:
             hit = self.cache.get(key)
             if hit is not None:

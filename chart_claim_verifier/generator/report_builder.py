@@ -48,7 +48,8 @@ def build_report(report_id: str, rng: random.Random, out_dir: Path, gen_cfg: dic
         img = out_dir / f"{fid}.png"
         render(table, sample_style(rng, held_out, hard), img)
         n_claims = rng.randint(*gen_cfg["claims_per_figure"])
-        cl = figure_claims(rng, table, fid, number, n_claims, gen_cfg["planted_deltas"], f"{report_id}_{fid}_")
+        cl = figure_claims(rng, table, fid, number, n_claims, gen_cfg["planted_deltas"], f"{report_id}_{fid}_",
+                           gen_cfg.get("novel_phrasing", 0.0))
         caption = f"{table.title} for the models in this experiment."
         figures.append({"figure_id": fid, "number": number, "image": img.name, "caption": caption,
                         "table": table.to_dict()})

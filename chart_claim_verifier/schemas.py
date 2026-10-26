@@ -1,7 +1,7 @@
 """The data contract (implementation.md §6.1).
 
-Every module talks through these objects. Changing this file needs the whole
-team to agree, because every workstream depends on it.
+Every module talks through these objects. Change this file deliberately and note
+the change, because every module depends on it.
 """
 from __future__ import annotations
 

@@ -11,7 +11,8 @@ from pathlib import Path
 
 from .report_builder import build_report
 
-SPLITS = ["calib", "dev", "test", "style_shift"]
+SPLITS = ["calib", "calib_easy", "dev", "test", "style_shift", "phrasing"]
+NOVEL_SHARE = 0.6        # "phrasing" split: share of claims worded in ways the rule parser does not know (U8)
 
 
 def load_truth(report_dir: str | Path) -> dict:
@@ -20,6 +21,10 @@ def load_truth(report_dir: str | Path) -> dict:
 
 def build_split(split: str, n: int, root: Path, gen_cfg: dict, seed: int = 0) -> list[str]:
     ids = []
+    if split == "phrasing":
+        gen_cfg = {**gen_cfg, "novel_phrasing": NOVEL_SHARE}
+    if split == "calib_easy":                    # U5: more easy charts, so every situation rests on >= 5 charts
+        gen_cfg = {**gen_cfg, "hard_share": 0.0}
     for i in range(n):
         rid = f"{split}_{i:03d}"
         rng = random.Random(f"{seed}-{split}-{i}")

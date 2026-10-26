@@ -16,12 +16,12 @@ from pathlib import Path
 import numpy as np
 from rapidfuzz import fuzz
 
-from reportlens.generator.plot import render, sample_style
-from reportlens.generator.tables import make_table
-from reportlens.schemas import Figure, PointQuery
-from reportlens.tools.axis import ChartReadError, analyse
-from reportlens.tools.chart_ocr import load_bgr
-from reportlens.tools.ocr_pixel import OcrPixelTool
+from chart_claim_verifier.generator.plot import render, sample_style
+from chart_claim_verifier.generator.tables import make_table
+from chart_claim_verifier.schemas import Figure, PointQuery
+from chart_claim_verifier.tools.axis import ChartReadError, analyse
+from chart_claim_verifier.tools.chart_ocr import load_bgr
+from chart_claim_verifier.tools.ocr_pixel import OcrPixelTool
 
 
 def hex_bgr(h):

@@ -106,6 +106,26 @@ def relative_sentence(rng, t: ChartTable, s: str, x1: str, x2: str, vtxt: str) -
     return f"From epoch {x1} to epoch {x2}, the {t.metric_word} of {s} improves by a relative {vtxt}."
 
 
+# Phrasings the rule parser does NOT know (U8): they exist to make the parse stage's escalation to the LLM
+# parser fire, so that decision can be evaluated. They keep the same facts and the same number.
+def novel_sentence(rng, t: ChartTable, ctype: str, ops, vtxt: str) -> str:
+    s, x, sb, xb = ops
+    w = t.metric_word
+    if ctype == "point":
+        if t.kind == "line":
+            return rng.choice([f"Epoch {x} sees {s} post a {w} of {vtxt}.",
+                               f"By epoch {x}, the {w} of {s} stands at {vtxt}."])
+        return rng.choice([f"Evaluated on {x}, {s} comes in at {vtxt} {w}.",
+                           f"{s} posts {vtxt} {w} when tested on {x}."])
+    if ctype == "difference":
+        if sb == s:
+            return f"{s} is {vtxt} points higher on {x} than on {xb}."
+        where = f"at epoch {x}" if t.kind == "line" else f"on {x}"
+        return rng.choice([f"{s} beats {sb} by {vtxt} points {where}.",
+                           f"{where[0].upper()}{where[1:]}, {s} leads {sb} by {vtxt} points."])
+    return f"The {w} of {s} improves by a relative {vtxt} between epoch {x} and epoch {xb}."
+
+
 def cite(rng, sentence: str, number: int) -> str:
     if rng.random() < 0.5:
         if sentence.startswith(("At ", "On ", "From ")):
@@ -163,7 +183,7 @@ def _render(rng, t, ctype, ops, vtxt) -> str:
 
 
 def figure_claims(rng: random.Random, t: ChartTable, figure_id: str, figure_number: int,
-                  n: int, deltas: list[float], id_prefix: str) -> list[ClaimRecord]:
+                  n: int, deltas: list[float], id_prefix: str, novel: float = 0.0) -> list[ClaimRecord]:
     out = []
     span = t.span
     for j in range(n):
@@ -207,7 +227,10 @@ def figure_claims(rng: random.Random, t: ChartTable, figure_id: str, figure_numb
                 claimed_true = (t.value(s, xb) + delta * span - t.value(s, x)) / abs(t.value(s, x)) * 100
             vtxt = fmt(claimed_true, dec, pct_fmt)
 
-        sentence = _render(rng, t, ctype, ops, vtxt)
+        if novel > 0 and rng.random() < novel:                      # no random draw at all when novel == 0
+            sentence = novel_sentence(rng, t, ctype, ops, vtxt)
+        else:
+            sentence = _render(rng, t, ctype, ops, vtxt)
         cites = rng.random() < 0.5
         if cites:
             sentence = cite(rng, sentence, figure_number)

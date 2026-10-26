@@ -3,24 +3,24 @@ import random
 
 import pytest
 
-from reportlens.agent.controller import ClaimController
-from reportlens.agent.policies import FixedOrderPolicy
-from reportlens.agent.report_agent import ReportAgent, finalize
-from reportlens.calibration.collect import collect_figure
-from reportlens.calibration.fit import fit_table
-from reportlens.claims.parser import RuleParser
-from reportlens.config import load_config
-from reportlens.decide.rule import RuleConfig
-from reportlens.evaluation.metrics import join, summarize
-from reportlens.generator.report_builder import build_report
-from reportlens.generator.tables import ChartTable
-from reportlens.ingest.pdf_parser import parse_pdf
-from reportlens.lms.guard import ActionGuard
-from reportlens.lms.mock_lms import MockLMS
-from reportlens.schemas import Figure, PointQuery
-from reportlens.tools.ocr_pixel import OcrPixelTool
-from reportlens.tools.registry import build_tools
-from reportlens.tools.simulated import TruthIndex
+from chart_claim_verifier.agent.controller import ClaimController
+from chart_claim_verifier.agent.policies import FixedOrderPolicy
+from chart_claim_verifier.agent.report_agent import ReportAgent, finalize
+from chart_claim_verifier.calibration.collect import collect_figure
+from chart_claim_verifier.calibration.fit import fit_table
+from chart_claim_verifier.claims.parser import RuleParser
+from chart_claim_verifier.config import load_config
+from chart_claim_verifier.decide.rule import RuleConfig
+from chart_claim_verifier.evaluation.metrics import join, summarize
+from chart_claim_verifier.generator.report_builder import build_report
+from chart_claim_verifier.generator.tables import ChartTable
+from chart_claim_verifier.ingest.pdf_parser import parse_pdf
+from chart_claim_verifier.lms.guard import ActionGuard
+from chart_claim_verifier.lms.mock_lms import MockLMS
+from chart_claim_verifier.schemas import Figure, PointQuery
+from chart_claim_verifier.tools.ocr_pixel import OcrPixelTool
+from chart_claim_verifier.tools.registry import build_tools
+from chart_claim_verifier.tools.simulated import TruthIndex
 
 pytest.importorskip("pytesseract")
 
@@ -36,8 +36,8 @@ def _ingest(tmp_path, rid, seed, truth_index):
 
 
 def test_ocr_pixel_reads_a_bar_chart(tmp_path):
-    from reportlens.generator.plot import render, sample_style
-    from reportlens.generator.tables import make_table
+    from chart_claim_verifier.generator.plot import render, sample_style
+    from chart_claim_verifier.generator.tables import make_table
     rng = random.Random(7)
     t = make_table(rng, "t", "grouped_bar")
     style = sample_style(rng)

@@ -7,6 +7,9 @@ generator:
 decision:
   min_group_size: 30
 
+calibration:
+  splits: [calib, calib_easy]     # calib_easy: more easy charts (configs/exp/calib_easy.yaml)
+
 tools:
   enabled: [ocr_pixel, deplot, vlm_table, vlm_crop]
 

@@ -6,11 +6,13 @@ Classical, shares no weights with the VLM, so it should fail differently:
 """
 from __future__ import annotations
 
+import hashlib
+
 import numpy as np
 
 from ..schemas import Figure, PointQuery
 from .axis import ChartReadError, Geometry, analyse, background_colour, mix_mask, series_colour
-from .base import Tool, ToolError
+from .base import Tool, ToolError, image_key
 from .chart_ocr import load_bgr
 
 def _mask(img: np.ndarray, colour: np.ndarray, geo: Geometry, x0: int | None = None,
@@ -101,13 +103,24 @@ class OcrPixelTool(Tool):
     scope = "point"
     cost = 0.8
     kind = "classical"
-    version = "v1"
+    version = "v1"          # unchanged by the legend hint: without a hint the behaviour is identical
+
+    def __init__(self, cache=None):
+        super().__init__(cache)
+        self.legend_hint: dict[str, list[str]] = {}      # image hash -> legend names read by the repair step (U7)
+
+    def cache_key(self, fig: Figure, q: PointQuery) -> tuple:
+        key = super().cache_key(fig, q)
+        hint = self.legend_hint.get(key[2])
+        if hint:                                          # a hinted reading is a different measurement
+            key = key[:4] + (q.x + "|legend=" + hashlib.sha1("|".join(hint).encode()).hexdigest()[:8],)
+        return key
 
     def _read(self, fig: Figure, q: PointQuery) -> float:
         try:
             geo = analyse(fig.image_path)
             img = load_bgr(fig.image_path)
-            colour = series_colour(img, geo, q.series)
+            colour = series_colour(img, geo, q.series, self.legend_hint.get(image_key(fig.image_path)))
         except ChartReadError as e:
             raise ToolError(str(e)) from None
         xc = geo.x_for(q.x)

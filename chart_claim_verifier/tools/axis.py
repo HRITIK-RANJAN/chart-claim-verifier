@@ -62,6 +62,7 @@ class Geometry:
     background: np.ndarray
     shape: tuple[int, int]
     notes: list[str] = field(default_factory=list)
+    swatches: list = field(default_factory=list)    # legend handles top to bottom: (BGR colour, bbox), names not needed
 
     @property
     def y_span(self) -> float:
@@ -305,8 +306,8 @@ def core_colour(pixels: np.ndarray) -> np.ndarray:
 # ----------------------------------------------------------------- legend
 
 
-def _legend_from_handles(img: np.ndarray, gray: np.ndarray, area: PlotArea, fpx: int):
-    """Legend handles are small coloured marks stacked at the same x; the label is to their right."""
+def _handle_group(img: np.ndarray, area: PlotArea, fpx: int) -> list:
+    """The legend's handles (small coloured marks stacked at the same x), top to bottom. [] if none."""
     a = area
     sat = _saturated(img[a.top + 2:a.bottom - 1, a.left + 2:a.right - 1], MIN_SAT).astype(np.uint8)
     n, _, stats, _ = cv2.connectedComponentsWithStats(sat, connectivity=8)
@@ -316,13 +317,33 @@ def _legend_from_handles(img: np.ndarray, gray: np.ndarray, area: PlotArea, fpx:
         if 0.8 * fpx <= w <= 4.5 * fpx and h <= 1.3 * fpx and area_px >= 6:
             cands.append((x + a.left + 2, y + a.top + 2, w, h, i))
     if not cands:
-        return {}, None
+        return []
     # handles of one legend share their left edge
     groups: dict[int, list] = {}
     for c in cands:
         key = next((k for k in groups if abs(k - c[0]) <= 3), c[0])
         groups.setdefault(key, []).append(c)
-    best = sorted(max(groups.values(), key=len), key=lambda c: c[1])
+    return sorted(max(groups.values(), key=len), key=lambda c: c[1])
+
+
+def _handle_colour(img: np.ndarray, x: int, y: int, w: int, h: int) -> np.ndarray:
+    patch = img[y:y + h, x:x + w]
+    m = _saturated(patch, MIN_SAT)
+    return core_colour(patch[m]) if m.any() else patch.reshape(-1, 3).mean(axis=0)
+
+
+def legend_swatches(img: np.ndarray, area: PlotArea, fpx: int) -> list:
+    """(colour, bbox) of each legend handle, top to bottom -- found without reading any legend text."""
+    return [(_handle_colour(img, x, y, w, h), (int(x), int(y), int(x + w), int(y + h)))
+            for x, y, w, h, _ in _handle_group(img, area, fpx)]
+
+
+def _legend_from_handles(img: np.ndarray, gray: np.ndarray, area: PlotArea, fpx: int):
+    """Legend handles are small coloured marks stacked at the same x; the label is to their right."""
+    a = area
+    best = _handle_group(img, a, fpx)
+    if not best:
+        return {}, None
     centres = [c[1] + c[3] / 2 for c in best]
     row = float(np.median(np.diff(centres))) if len(best) > 1 else 1.5 * fpx
     half = min(0.75 * fpx, 0.48 * row)               # never let a crop reach the next legend row
@@ -334,9 +355,7 @@ def _legend_from_handles(img: np.ndarray, gray: np.ndarray, area: PlotArea, fpx:
         text = re.sub(r"[^A-Za-z0-9\- .+]", "", text).strip(" .-")
         if len(re.sub(r"[^A-Za-z]", "", text)) < 2:
             continue
-        patch = img[y:y + h, x:x + w]
-        m = _saturated(patch, MIN_SAT)
-        colour = core_colour(patch[m]) if m.any() else patch.reshape(-1, 3).mean(axis=0)
+        colour = _handle_colour(img, x, y, w, h)
         width_px = 0.62 * fpx * len(text)               # rough text width, for the legend box
         box = (int(x), int(cy - 0.7 * fpx), int(min(a.right, tx0 + width_px)), int(cy + 0.7 * fpx))
         entries[text] = (colour, box)
@@ -425,15 +444,37 @@ def analyse(path: str) -> Geometry:
         xticks = [(x, t) for x, t in digits if t]
     xfit = fit_x(xticks)
     legend, legend_box = find_legend(img, gray, path, area, fpx)
-    return Geometry(area, yfit, xticks, xfit, legend, legend_box, fpx, background_colour(img, area), (h, w))
+    return Geometry(area, yfit, xticks, xfit, legend, legend_box, fpx, background_colour(img, area), (h, w),
+                    swatches=legend_swatches(img, area, fpx))
 
 
-def series_colour(img: np.ndarray, geo: Geometry, series: str) -> np.ndarray:
-    """The colour of a series: its legend handle, or the dominant colour if there is no legend."""
+def _colour_from_names(geo: Geometry, series: str, names: list[str]) -> np.ndarray:
+    """Repair (U7): legend names read by a VLM, paired with the legend handles by vertical order."""
+    if len(names) != len(geo.swatches):
+        raise ChartReadError("legend_mismatch")           # cannot pair names with handles: do not guess
+    name, score = max(((n, fuzz.token_set_ratio(n.lower(), series.lower())) for n in names), key=lambda p: p[1])
+    if score < 70:
+        raise ChartReadError("series_not_found")
+    i = names.index(name)
+    colour = geo.swatches[i][0]
+    if any(colours_confusable(colour, c, geo.background) for j, (c, _) in enumerate(geo.swatches) if j != i):
+        raise ChartReadError("colour_ambiguous")
+    return colour
+
+
+def series_colour(img: np.ndarray, geo: Geometry, series: str, names: list[str] | None = None) -> np.ndarray:
+    """The colour of a series: its legend handle, or the dominant colour if there is no legend.
+
+    `names` (optional) are the legend entries read by the repair step; they are used only when the OCR'd
+    legend does not contain the series (or no legend text could be read at all)."""
+    if names and geo.swatches and not geo.legend:
+        return _colour_from_names(geo, series, names)
     if geo.legend:
         name, score = max(((n, fuzz.token_set_ratio(n.lower(), series.lower())) for n in geo.legend),
                           key=lambda p: p[1])
         if score < 70:
+            if names and geo.swatches:
+                return _colour_from_names(geo, series, names)
             raise ChartReadError("series_not_found")
         colour = geo.legend[name][0]
         bg = geo.background

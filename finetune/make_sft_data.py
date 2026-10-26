@@ -12,9 +12,9 @@ import json
 import random
 from pathlib import Path
 
-from reportlens.generator.plot import render, sample_style
-from reportlens.generator.tables import make_table
-from reportlens.tools.vlm_table import PROMPT
+from chart_claim_verifier.generator.plot import render, sample_style
+from chart_claim_verifier.generator.tables import make_table
+from chart_claim_verifier.tools.vlm_table import PROMPT
 
 
 def main() -> None:

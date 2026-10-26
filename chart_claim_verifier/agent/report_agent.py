@@ -174,7 +174,10 @@ class ReportAgent:
                     r.decision.verdict = "NOT_SURE"
                     r.decision.reason = "ambiguous figure: " + ", ".join(f.figure_id for f, _ in runs)
                 r.calls = sum(x.calls for _, x in runs)
-            stages = stages + [{"stage": "measure", "decision": s["action"].get("tool") or s["action"]["action"],
+            stages = stages + [{"stage": "measure",
+                                "decision": (f"repair {s['action']['tool']} ({s['action']['repair']})"
+                                             if s["action"]["action"] == "repair"
+                                             else s["action"].get("tool") or s["action"]["action"]),
                                 "why": s["action"].get("why", ""), "result": s.get("result")} for s in r.steps]
             stages.append({"stage": "decide", "decision": r.decision.verdict, "why": r.decision.reason})
             tr = ClaimTrace(**base, claim=claim, figure_id=fig.figure_id, figure_candidates=cands,

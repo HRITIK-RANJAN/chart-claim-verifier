@@ -1,0 +1,11 @@
+# U5: extra EASY calibration charts, so line|easy and bar|easy rest on at least 5 charts each.
+#   chart-claim-verifier generate -c configs/exp/calib_easy.yaml      (builds only the "calib_easy" split)
+generator:
+  reports: {calib: 0, dev: 0, test: 0, style_shift: 0, calib_easy: 5}
+  injection_rate: 0.0
+paths:
+  data_dir: data/local/generated
+  splits_dir: data/local/splits
+  cache_db: cache/local.sqlite
+  calibration_dir: calibration_tables/local
+  runs_dir: runs/local

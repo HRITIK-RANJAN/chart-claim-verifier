@@ -1,11 +1,11 @@
 # Main experiments (E1, E2, E3, E5) on a Kaggle / Colab T4 with the real tools.
-#   reportlens generate  -c configs/exp/main_gpu.yaml
-#   reportlens calibrate -c configs/exp/main_gpu.yaml
-#   reportlens run -c configs/exp/main_gpu.yaml --split dev  --policy all_tools      # tune on dev first
-#   reportlens run -c configs/exp/main_gpu.yaml --split test --policy all_tools      # E1/E3 (+ sweep)
-#   reportlens run -c configs/exp/main_gpu.yaml --split test --policy fixed_order    # E5
-#   reportlens run -c configs/exp/main_gpu.yaml --split test --policy llm            # E5 (P2)
-#   reportlens run -c configs/exp/main_gpu.yaml --split style_shift --policy all_tools  # E2 style shift
+#   chart-claim-verifier generate  -c configs/exp/main_gpu.yaml
+#   chart-claim-verifier calibrate -c configs/exp/main_gpu.yaml
+#   chart-claim-verifier run -c configs/exp/main_gpu.yaml --split dev  --policy all_tools      # tune on dev first
+#   chart-claim-verifier run -c configs/exp/main_gpu.yaml --split test --policy all_tools      # E1/E3 (+ sweep)
+#   chart-claim-verifier run -c configs/exp/main_gpu.yaml --split test --policy fixed_order    # E5
+#   chart-claim-verifier run -c configs/exp/main_gpu.yaml --split test --policy llm            # E5 (P2)
+#   chart-claim-verifier run -c configs/exp/main_gpu.yaml --split style_shift --policy all_tools  # E2 style shift
 tools:
   enabled: [ocr_pixel, deplot, vlm_table, vlm_crop]
 agent:

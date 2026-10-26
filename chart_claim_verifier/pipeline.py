@@ -79,11 +79,16 @@ def ingest(ctx: Context, report_dir: Path) -> tuple[Report, dict]:
 
 
 # ------------------------------------------------------------------ calibration
-def calibrate(ctx: Context, split: str = "calib", name: str | None = None) -> tuple[CalibrationTable, dict]:
+def calibration_splits(cfg: dict, split: str | None = None) -> list[str]:
+    """Which splits are read for calibration: --split "a,b", else calibration.splits from the config."""
+    return split.split(",") if split else list((cfg.get("calibration") or {}).get("splits", ["calib"]))
+
+
+def calibrate(ctx: Context, split: str | None = None, name: str | None = None) -> tuple[CalibrationTable, dict]:
     cfg = ctx.cfg
     tools = ctx.tools()
     rng = random.Random(cfg["seed"])
-    items, errors = _collect(ctx, split, tools, rng)
+    items, errors = _collect(ctx, calibration_splits(cfg, split), tools, rng)
     names = list(tools)
     order = cfg["agent"]["fixed_order"] if cfg["agent"]["policy"] in ("fixed_order",) else None
     d = cfg["decision"]
@@ -108,11 +113,11 @@ def calibrate(ctx: Context, split: str = "calib", name: str | None = None) -> tu
     return table, extras
 
 
-def _collect(ctx: Context, split: str, tools: dict, rng: random.Random) -> tuple[list, list]:
+def _collect(ctx: Context, splits: list[str], tools: dict, rng: random.Random) -> tuple[list, list]:
     import sys
     import time
     items, errors = [], []
-    dirs = report_dirs(ctx.data, split)
+    dirs = [d for s in splits for d in report_dirs(ctx.data, s)]
     t0 = time.time()
     for k, rd in enumerate(dirs):
         print(f"[calibrate] {k + 1}/{len(dirs)} {rd.name}  {time.time() - t0:.0f}s", file=sys.stderr, flush=True)
@@ -132,7 +137,7 @@ def _profile_settings(cfg: dict) -> tuple[float, float]:
     return (cfg["agent"].get("informed", {}).get("big_error", 0.05), cfg["decision"].get("max_accept_margin", 0.03))
 
 
-def rebuild_profile(ctx: Context, split: str = "calib", name: str | None = None) -> dict:
+def rebuild_profile(ctx: Context, split: str | None = None, name: str | None = None) -> dict:
     """Recompute the tool profile from the calibration readings (saved errors, else the reading cache)."""
     from .evaluation.tool_profile import build_profile, save_profile
     names = list(ctx.cfg["tools"]["enabled"])
@@ -143,11 +148,17 @@ def rebuild_profile(ctx: Context, split: str = "calib", name: str | None = None)
     if errors is None or not all("series" in e for e in errors):        # older file: re-collect from the cache
         errors = None
     if errors is None:
-        _, errors = _collect(ctx, split, ctx.tools(), random.Random(ctx.cfg["seed"]))
+        _, errors = _collect(ctx, calibration_splits(ctx.cfg, split), ctx.tools(), random.Random(ctx.cfg["seed"]))
         if ctx.offline and any("offline_miss" in e.get("_fail", {}).values() for e in errors):
-            raise RuntimeError("the reading cache does not hold every calibration reading: run `reportlens calibrate`")
+            raise RuntimeError("the reading cache does not hold every calibration reading: run `chart-claim-verifier calibrate`")
         saved.write_text(json.dumps(errors))
     profile = build_profile(errors, names, error_correlation(errors, names), *_profile_settings(ctx.cfg))
+    try:                                                  # repairs are measured separately (scripts/pilot_legend.py): keep them
+        old = load_profile(ctx, name)
+        profile["repairs"] = old.get("repairs", {})
+        profile["cost"].update({k: v for k, v in old.get("cost", {}).items() if k not in profile["cost"]})
+    except FileNotFoundError:
+        pass
     save_profile(profile, out / f"{name}.profile.json")
     return profile
 
@@ -163,6 +174,18 @@ def load_table(ctx: Context, name: str | None = None) -> CalibrationTable:
     return CalibrationTable.load(Path(ctx.cfg["paths"]["calibration_dir"]) / f"{name}.json")
 
 
+def make_repairs(ctx: Context) -> dict:
+    """Repairs the controller may run when the planner asks (U7). Needs the VLM (or the cached answers)."""
+    def read_legend_for(fig, tool) -> bool:
+        from .tools.base import image_key
+        from .tools.legend import read_legend
+        names = read_legend(ctx.llm, fig, ctx.cache)
+        if names and hasattr(tool, "legend_hint"):
+            tool.legend_hint[image_key(fig.image_path)] = names
+        return bool(names)
+    return {"read_legend": read_legend_for}
+
+
 # ------------------------------------------------------------------ runs
 def make_policy(ctx: Context, name: str, table: CalibrationTable, tools: dict, profile: dict | None = None) -> Policy:
     order = [t for t in ctx.cfg["agent"]["fixed_order"] if t in tools] + [t for t in tools if t not in ctx.cfg["agent"]["fixed_order"]]
@@ -175,11 +198,15 @@ def make_policy(ctx: Context, name: str, table: CalibrationTable, tools: dict, p
     if name == "informed":
         from .agent.planner import InformedPolicy
         if profile is None:
-            raise ValueError("the informed policy needs a tool profile: run `reportlens calibrate` first")
+            raise ValueError("the informed policy needs a tool profile: run `chart-claim-verifier calibrate` first")
         from .agent.planner import Thresholds
         return InformedPolicy(profile, Thresholds.from_cfg(ctx.cfg))
     if name == "llm":
-        return LLMPolicy(ctx.llm, TOOL_DESCRIPTIONS, MockLMS.CATALOG, fallback=FixedOrderPolicy(order))
+        ref = None
+        if profile is not None:                     # log what the informed policy would choose in each state
+            from .agent.planner import InformedPolicy, Thresholds
+            ref = InformedPolicy(profile, Thresholds.from_cfg(ctx.cfg))
+        return LLMPolicy(ctx.llm, TOOL_DESCRIPTIONS, MockLMS.CATALOG, fallback=FixedOrderPolicy(order), reference=ref)
     raise ValueError(f"unknown policy {name!r}")
 
 
@@ -193,7 +220,8 @@ def run_split(ctx: Context, split: str, table: CalibrationTable, policy: str | N
         profile = None
     pol = make_policy(ctx, policy or cfg["agent"]["policy"], table, tools, profile)
     rc = RuleConfig.from_cfg(cfg)
-    controller = ClaimController(tools, pol, table, rc, cfg["decision"]["max_tool_calls"], profile)
+    repairs = make_repairs(ctx) if (profile or {}).get("repairs") else None
+    controller = ClaimController(tools, pol, table, rc, cfg["decision"]["max_tool_calls"], profile, repairs)
     # parser: "rule" (no model), "llm" (always the model), "agent" (rules, LLM only when needed)
     prs = LLMParser(ctx.llm) if parser == "llm" else RuleParser()
     llm_parser = LLMParser(ctx.llm) if parser == "agent" else None

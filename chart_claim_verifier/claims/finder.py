@@ -11,7 +11,7 @@ from .tolerance import find_numbers
 
 FIG_REF = re.compile(r"\(?\b(?:Figure|Fig\.)\s*\d+\)?,?", re.I)
 RESULT_WORDS = re.compile(
-    r"\b(reach\w*|achiev\w*|obtain\w*|attain\w*|scor\w*|outperform\w*|better|worse|higher|lower|"
+    r"\b(reach\w*|achiev\w*|obtain\w*|attain\w*|scor\w*|outperform\w*|beat\w*|lead\w*|ahead|exceed\w*|surpass\w*|better|worse|higher|lower|"
     r"improv\w*|drop\w*|decreas\w*|increas\w*|accuracy|loss|f1|precision|recall|error rate|peaks?)\b", re.I)
 
 

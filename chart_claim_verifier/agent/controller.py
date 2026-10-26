@@ -28,13 +28,15 @@ class ClaimResult:
     steps: list[dict] = field(default_factory=list)
     calls: int = 0
     blocked: list[str] = field(default_factory=list)
+    failed: dict[str, str] = field(default_factory=dict)       # tool -> failure code seen on THIS claim
 
 
 class ClaimController:
     def __init__(self, tools: dict[str, Tool], policy: Policy, table: CalibrationTable, rc: RuleConfig,
-                 max_tool_calls: int = 8, profile: dict | None = None):
+                 max_tool_calls: int = 8, profile: dict | None = None, repairs: dict | None = None):
         self.tools, self.policy, self.table, self.rc, self.max_calls = tools, policy, table, rc, max_tool_calls
         self.profile = profile            # measured tool performance (evaluation/tool_profile.py)
+        self.repairs = repairs or {}      # name -> fn(fig, tool) -> truthy if the cause of a failure was fixed (U7)
 
     def _seconds(self, name: str, n_operands: int) -> float:
         """Measured cost of one call (falls back to the tool's own estimate)."""
@@ -60,6 +62,9 @@ class ClaimController:
             "readings": [{"tool": t, "value": round(v, 4)} for t, v in res.tool_values.items()],
             "failed_here": sorted({t for (t, f, _, _) in mem.failures if f == fig.figure_id}),
             "blocked": blocked, "shared_by": shared,
+            "failed_now": dict(res.failed), "can_repair": list(self.repairs),
+            "repairs": (self.profile or {}).get("repairs") or {},
+            "repaired": sorted(f"{t}:{r}" for (t, f, r) in mem.repaired if f == fig.figure_id),
             "available": available, "all_tools": list(self.tools), "cached_for_free": free,
             "costs": {t: (0.0 if t in free else round(self._seconds(t, n_ops) / shared.get(t, 1), 2)) for t in available},
             "calls_left": self.max_calls - res.calls,
@@ -104,6 +109,23 @@ class ClaimController:
             res.steps.append(step)
             if action.get("forbidden"):
                 res.blocked.append(action["forbidden"])
+            if action["action"] == "repair":
+                tool_name, rep = action["tool"], action["repair"]
+                if (tool_name, fig.figure_id, rep) in mem.repaired or rep not in self.repairs or res.calls + 1 > self.max_calls:
+                    step["skipped"] = "repair not possible"
+                    break
+                mem.repaired.add((tool_name, fig.figure_id, rep))
+                res.calls += 1
+                mem.calls["repair:" + rep] += 1
+                fixed = self.repairs[rep](fig, self.tools[tool_name])
+                step["result"] = "repaired" if fixed else "error: repair gave nothing"
+                if fixed:
+                    codes = {k.split(":", 1)[1] for k, v in ((self.profile or {}).get("repairs") or {}).items()
+                             if k.startswith(tool_name + ":") and v.get("repair") == rep}
+                    mem.lift(tool_name, fig.figure_id, codes)
+                    tried.discard(tool_name)
+                    res.failed.pop(tool_name, None)
+                continue
             if action["action"] != "read":
                 if action.get("why"):
                     res.decision.reason = "handed off: " + action["why"]
@@ -127,6 +149,7 @@ class ClaimController:
             if bad:
                 for r in bad:
                     mem.note_failure(name, fig.figure_id, r.query.series if r.query else "", r.error or "error")
+                res.failed[name] = bad[0].error or "error"
                 step["result"] = f"error: {bad[0].error}"
                 continue
             v = derived_value(claim.claim_type, [r.value for r in reads])

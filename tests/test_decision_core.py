@@ -3,13 +3,13 @@ import random
 
 import pytest
 
-from reportlens.calibration.fit import CalibrationItem, fit_table
-from reportlens.calibration.pvalues import benjamini_hochberg, conformal_cutoff, p_value
-from reportlens.calibration.store import CalibrationTable, ConstantTable
-from reportlens.claims.tolerance import find_numbers, is_within, rounding_tolerance
-from reportlens.decide.rule import RuleConfig, batch_check, claim_gap, decide
-from reportlens.measure.aggregate import derived_value, disagreement, estimate
-from reportlens.schemas import ClaimSpec, ClaimTrace, Decision
+from chart_claim_verifier.calibration.fit import CalibrationItem, fit_table
+from chart_claim_verifier.calibration.pvalues import benjamini_hochberg, conformal_cutoff, p_value
+from chart_claim_verifier.calibration.store import CalibrationTable, ConstantTable
+from chart_claim_verifier.claims.tolerance import find_numbers, is_within, rounding_tolerance
+from chart_claim_verifier.decide.rule import RuleConfig, batch_check, claim_gap, decide
+from chart_claim_verifier.measure.aggregate import derived_value, disagreement, estimate
+from chart_claim_verifier.schemas import ClaimSpec, ClaimTrace, Decision
 
 
 # ---------------------------------------------------------------- tolerance

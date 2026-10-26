@@ -1,10 +1,10 @@
 """Command line.
 
-    reportlens generate  -c configs/exp/smoke_cpu.yaml
-    reportlens calibrate -c configs/exp/smoke_cpu.yaml
-    reportlens run       -c configs/exp/smoke_cpu.yaml --split test --policy fixed_order
-    reportlens sweep     -c configs/exp/smoke_cpu.yaml --run runs/<name>
-    reportlens check     -c configs/exp/smoke_cpu.yaml path/to/report_dir
+    chart-claim-verifier generate  -c configs/exp/smoke_cpu.yaml
+    chart-claim-verifier calibrate -c configs/exp/smoke_cpu.yaml
+    chart-claim-verifier run       -c configs/exp/smoke_cpu.yaml --split test --policy fixed_order
+    chart-claim-verifier sweep     -c configs/exp/smoke_cpu.yaml --run runs/<name>
+    chart-claim-verifier check     -c configs/exp/smoke_cpu.yaml path/to/report_dir
 """
 from __future__ import annotations
 
@@ -31,12 +31,13 @@ def _print(d: dict) -> None:
 
 
 def main(argv=None) -> None:
-    ap = argparse.ArgumentParser("reportlens")
+    ap = argparse.ArgumentParser("chart-claim-verifier")
     sub = ap.add_subparsers(dest="cmd", required=True)
     for name in ("generate", "calibrate", "run", "sweep", "check", "safety", "profile", "baselines"):
         s = sub.add_parser(name)
         s.add_argument("-c", "--config", default=None)
-    sub.choices["calibrate"].add_argument("--split", default="calib")
+    sub.choices["calibrate"].add_argument("--split", default=None,
+                                          help='split(s) to calibrate on, e.g. "calib,calib_easy" (default: calibration.splits)')
     r = sub.choices["run"]
     r.add_argument("--split", default="test")
     r.add_argument("--policy", default=None)

@@ -82,11 +82,20 @@ class LLMPolicy(Policy):
     name = "llm"
 
     def __init__(self, llm: LLM, tool_descriptions: dict[str, str], lms_catalog: dict[str, str],
-                 fallback: Policy):
+                 fallback: Policy, reference: Policy | None = None):
         self.llm, self.tool_descriptions, self.lms_catalog, self.fallback = llm, tool_descriptions, lms_catalog, fallback
+        self.reference = reference      # E5/U9: what the informed policy would do in the same state (logged, never used)
         self.invalid = 0
 
     def next_action(self, state):
+        out = self._choose(state)
+        if self.reference is not None:
+            ref = self.reference.next_action(state)
+            out["p3_choice"] = ref.get("tool") or ref["action"]
+            out["agrees_with_p3"] = (out.get("tool") or out["action"]) == out["p3_choice"]
+        return out
+
+    def _choose(self, state):
         tools = ", ".join(f"{t} ({self.tool_descriptions.get(t, '')}, cost {state['costs'].get(t, '?')})"
                           for t in state["available"])
         lms = ", ".join(f"{k} ({v})" for k, v in self.lms_catalog.items())

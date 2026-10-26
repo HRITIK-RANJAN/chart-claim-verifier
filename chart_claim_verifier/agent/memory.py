@@ -14,6 +14,7 @@ class ReportMemory:
     index: FigureIndex
     tables_used: set[tuple[str, str]] = field(default_factory=set)        # (tool, figure_id): already paid for
     failures: list[tuple[str, str, str, str]] = field(default_factory=list)   # (tool, figure_id, series, code)
+    repaired: set[tuple[str, str, str]] = field(default_factory=set)      # (tool, figure_id, repair) already tried
     pending: Counter = field(default_factory=Counter)                     # figure_id -> claims still waiting on it
     checked: dict[str, ClaimTrace] = field(default_factory=dict)          # normalised sentence -> trace
     calls: Counter = field(default_factory=Counter)                       # logical tool calls per tool
@@ -25,6 +26,10 @@ class ReportMemory:
 
     def note_failure(self, tool: str, figure_id: str, series: str, error: str) -> None:
         self.failures.append((tool, figure_id, series, error))
+
+    def lift(self, tool: str, figure_id: str, codes: set[str]) -> None:
+        """A repair removed the cause of these failures: the tool may be tried again on this figure."""
+        self.failures = [f for f in self.failures if not (f[0] == tool and f[1] == figure_id and f[3] in codes)]
 
     def blocked(self, tool: str, figure_id: str, series: list[str], scope: dict[str, str]) -> str | None:
         """The earlier failure that makes `tool` pointless for these series on this figure, or None.

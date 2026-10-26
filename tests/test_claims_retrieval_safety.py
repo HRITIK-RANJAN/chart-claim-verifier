@@ -2,17 +2,17 @@ import json
 
 import pytest
 
-from reportlens.agent.policies import FixedOrderPolicy, LLMPolicy
-from reportlens.claims.finder import is_candidate
-from reportlens.claims.parser import LLMParser, ParseError, RuleParser
-from reportlens.lms.guard import ActionGuard
-from reportlens.lms.mock_lms import MockLMS
-from reportlens.models.vlm import ScriptedLLM, extract_json
-from reportlens.retrieval.figure_index import FigureIndex
-from reportlens.schemas import ClaimSpec, Figure
-from reportlens.tools.base import ToolError, lookup
-from reportlens.tools.deplot import parse_linearized
-from reportlens.tools.vlm_table import parse_table
+from chart_claim_verifier.agent.policies import FixedOrderPolicy, LLMPolicy
+from chart_claim_verifier.claims.finder import is_candidate
+from chart_claim_verifier.claims.parser import LLMParser, ParseError, RuleParser
+from chart_claim_verifier.lms.guard import ActionGuard
+from chart_claim_verifier.lms.mock_lms import MockLMS
+from chart_claim_verifier.models.vlm import ScriptedLLM, extract_json
+from chart_claim_verifier.retrieval.figure_index import FigureIndex
+from chart_claim_verifier.schemas import ClaimSpec, Figure
+from chart_claim_verifier.tools.base import ToolError, lookup
+from chart_claim_verifier.tools.deplot import parse_linearized
+from chart_claim_verifier.tools.vlm_table import parse_table
 
 
 # ---------------------------------------------------------------- finder / parser
@@ -144,8 +144,8 @@ def test_llm_policy_cannot_use_lms_tools_or_give_verdicts():
 
 # ---------------------------------------------------------------- baselines (with a scripted model)
 def test_baselines_with_scripted_model():
-    from reportlens.baselines.vlm_baselines import b1_direct, b2_threshold, b3_majority, b4_tools_no_rule
-    from reportlens.schemas import ClaimTrace, Decision, Report
+    from chart_claim_verifier.baselines.vlm_baselines import b1_direct, b2_threshold, b3_majority, b4_tools_no_rule
+    from chart_claim_verifier.schemas import ClaimTrace, Decision, Report
     claim = RuleParser().parse("A reaches 80.0% accuracy at epoch 1.", "c")
     t = ClaimTrace(report_id="r", sentence_id="s", sentence=claim.sentence, claim=claim, figure_id="fig1",
                    tool_values={"a": 70.0, "b": 71.0}, decision=Decision(verdict="NOT_SURE"))

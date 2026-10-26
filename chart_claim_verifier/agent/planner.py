@@ -31,7 +31,9 @@ Rules (each one cites its numbers in the trace):
     the expensive tool has been paid for
   * with one reading in hand, pick the partner with the highest
     answers * trust * (1 - wrong-agreement) / (1 + cost/10)
-  * if the decision is still unclear and no usable tool is left: hand off
+  * if the decision is still unclear and no usable tool is left: first look for a measured REPAIR of the
+    failure (profile "repairs"): one that fixed at least min_repair_success of such failures in calibration
+    and would complete a trustworthy pair; otherwise hand off
 Numbers measured on fewer than min_figures charts are replaced by the pooled
 numbers: points on one chart share their mistakes.
 """
@@ -51,6 +53,7 @@ class Thresholds:
     min_points: int = 10
     min_figures: int = 5
     min_pair_agreements: int = 20
+    min_repair_success: float = 0.5
 
     @classmethod
     def from_cfg(cls, cfg: dict) -> "Thresholds":
@@ -175,7 +178,7 @@ class InformedPolicy(Policy):
             if excluded:
                 why += " (" + "; ".join(f"{t} agrees wrongly with {', '.join(f'{u} {r:.1%}' for u, r in b.items())}"
                                         for t, b in excluded.items()) + " of the time)"
-            return {"action": "handoff", "why": why + why_blocked}
+            return self._repair_or_handoff(state, sit, on_tick, {"action": "handoff", "why": why + why_blocked})
 
         scored.sort(reverse=True)
         score, best, a, tr, worst, cost = scored[0]
@@ -206,8 +209,9 @@ class InformedPolicy(Policy):
             if best is None or value > best[0]:
                 best = (value, a, b)
         if best is None:
-            return {"action": "handoff",
-                    "why": "no trustworthy pair among the tools still available on this figure" + why_blocked}
+            return self._repair_or_handoff(state, sit, on_tick, {
+                "action": "handoff",
+                "why": "no trustworthy pair among the tools still available on this figure" + why_blocked})
         _, a, b = best
         first = max((a, b), key=lambda t: ((1 - self._ans(sit, t, on_tick)) / (costs.get(t, 1.0) + 0.1), t == a))
         other = b if first == a else a
@@ -221,6 +225,25 @@ class InformedPolicy(Policy):
         if skipped:
             why += f"; not calling {self._fmt(skipped)} (would almost surely refuse here)"
         return {"action": "read", "tool": first, "why": why + why_blocked}
+
+    def _repair_or_handoff(self, state, sit, on_tick, handoff: dict) -> dict:
+        """Before giving up: has a tool that failed here a measured repair that would give a trustworthy pair?"""
+        used = [r["tool"] for r in state["readings"]]
+        for tool, code in (state.get("failed_now") or {}).items():
+            rep = (state.get("repairs") or {}).get(f"{tool}:{code}")
+            if (not rep or rep["repair"] not in (state.get("can_repair") or []) or rep["fixed"] < self.th.min_repair_success
+                    or f"{tool}:{rep['repair']}" in (state.get("repaired") or [])):
+                continue
+            partners = [u for u in used + list(state["available"]) if u != tool
+                        and (self._ans(sit, u, on_tick) >= self.min_answer)
+                        and (wrong_when_agree(self.profile, sit, tool, u, self.th) or 0.0) <= self.max_wrong]
+            if not partners:
+                continue
+            u = partners[0]
+            return {"action": "repair", "tool": tool, "repair": rep["repair"],
+                    "why": (f"{tool} failed with {code}; {rep['repair']} fixed {rep['fixed']:.0%} of such failures in calibration "
+                            f"({rep['n']} points, {rep.get('seconds', 0):.0f}s); then {pair_note(self.profile, sit, tool, u, self.th)}")}
+        return handoff
 
     @staticmethod
     def _fmt(d: dict, digits: int = 0) -> str:

@@ -10,7 +10,7 @@ from pathlib import Path
 KEYS = [
     ("n_claims", "{:d}"), ("n_flagged", "{:d}"), ("wrong_flag_rate", "{:.1%}"), ("coverage", "{:.1%}"),
     ("accuracy_when_decided", "{:.1%}"), ("missed_errors", "{:.1%}"), ("margin_check", "{:.1%}"),
-    ("detection_limit_delta50", "{}"), ("tool_calls_per_claim", "{:.2f}"), ("early_handoffs", "{:d}"),
+    ("detection_limit_delta50", "{}"), ("tool_calls_per_claim", "{:.2f}"), ("early_handoffs", "{:d}"), ("policy_agrees_with_p3", "{:.1%}"), ("repairs", "{:d}"),
     ("parse_escalations_to_llm", "{:d}"), ("retrieval_top1", "{:.1%}"), ("no_figure_accuracy", "{:.1%}"),
 ]
 
@@ -41,7 +41,7 @@ def main(paths, profile=None):
     for n, m in runs:
         print(f"  {n:16s} {m['run'].get('calls_by_tool')}")
     if profile:
-        cost = {t: (c.get("seconds_per_figure") if t in ("deplot", "vlm_table") else c.get("seconds_per_read")) or 0.0
+        cost = {t: (c.get("seconds_per_figure") if t in ("deplot", "vlm_table", "repair:read_legend") else c.get("seconds_per_read")) or 0.0
                 for t, c in profile["cost"].items()}
         print("\nestimated model time (calls x measured seconds per call):")
         for n, m in runs:

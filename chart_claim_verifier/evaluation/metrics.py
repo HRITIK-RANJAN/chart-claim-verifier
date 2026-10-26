@@ -173,6 +173,10 @@ def summarize(rows: list[Row]) -> dict:
                                         for r in rows),
         "reparse_after_no_figure": sum(any(st.get("decision") == "re-parse with LLM" for st in r.trace.stages)
                                        for r in rows),
+        "policy_agrees_with_p3": _rate(sum(s["action"].get("agrees_with_p3") is True for r in claims
+                                          for s in r.trace.controller_steps),
+                                       sum("agrees_with_p3" in s["action"] for r in claims for s in r.trace.controller_steps)),
+        "repairs": sum(s["action"].get("action") == "repair" for r in claims for s in r.trace.controller_steps),
         "early_handoffs": sum(r.trace.decision.reason.startswith("handed off") for r in claims),
         "handoff_reasons": dict(Counter(_reason(r.trace.decision.reason) for r in claims if r.verdict == "NOT_SURE")),
     }

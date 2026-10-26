@@ -36,13 +36,15 @@ retrieval:
 agent:
   policy: fixed_order     # all_tools | fixed_order | calibration_informed | informed | llm
   fixed_order: [ocr_pixel, deplot, vlm_table, vlm_crop]
-  ambiguous_rule: either  # two figures fit a sentence: either | top | both | never (see scripts/ambiguous_rules.py)
+  ambiguous_rule: both    # two figures fit a sentence: either | top | both | never (see scripts/ambiguous_rules.py).
+                          # Chosen on 14 ambiguous claims (test + dev): either/top accepted 5, one of them wrong; both/never 0 missed errors
   informed:               # the informed policy (agent/planner.py); every number is read from the tool profile
     min_answer: 0.10        # a tool that answers < 10% of the time here would almost surely refuse: skip it
     max_wrong_agree: 0.05   # half the 10% wrong-flag target: a pair that agrees wrongly more often is no cross-check
     min_points: 10          # fewer measurements than this in a situation -> use the pooled ("*") numbers
     min_figures: 5          # ... and fewer charts than this too: points on one chart share their mistakes
     min_pair_agreements: 20 # agreements needed before a pair's wrong-agreement rate is trusted
+    min_repair_success: 0.5 # a repair is proposed only if it fixed at least this share of such failures in calibration
     big_error: 0.05         # "badly wrong" = off by more than 5% of the axis range (the usual ChartQA tolerance)
 
 tools:

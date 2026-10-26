@@ -10,10 +10,10 @@ from pathlib import Path
 
 import numpy as np
 
-from reportlens.generator.plot import render, sample_style
-from reportlens.generator.tables import make_table
-from reportlens.schemas import Figure, PointQuery
-from reportlens.tools.ocr_pixel import OcrPixelTool
+from chart_claim_verifier.generator.plot import render, sample_style
+from chart_claim_verifier.generator.tables import make_table
+from chart_claim_verifier.schemas import Figure, PointQuery
+from chart_claim_verifier.tools.ocr_pixel import OcrPixelTool
 
 ap = argparse.ArgumentParser()
 ap.add_argument("--n", type=int, default=40)

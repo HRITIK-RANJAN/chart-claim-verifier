@@ -1,0 +1,12 @@
+# U8: reports whose claims are partly worded in ways the rule parser does not know.
+#   chart-claim-verifier generate -c configs/exp/phrasing.yaml      (builds only the "phrasing" split)
+#   python scripts/eval_parse.py -c configs/exp/phrasing.yaml --split phrasing
+generator:
+  reports: {calib: 0, dev: 0, test: 0, style_shift: 0, phrasing: 10}
+  injection_rate: 0.0
+paths:
+  data_dir: data/local/generated
+  splits_dir: data/local/splits
+  cache_db: cache/local.sqlite
+  calibration_dir: calibration_tables/local
+  runs_dir: runs/local

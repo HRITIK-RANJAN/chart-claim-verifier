@@ -1,7 +1,7 @@
-from reportlens.models.vlm import OfflineLLM
-from reportlens.schemas import Figure, PointQuery
-from reportlens.tools.cache import ReadingCache
-from reportlens.tools.vlm_crop import VlmCropTool
+from chart_claim_verifier.models.vlm import OfflineLLM
+from chart_claim_verifier.schemas import Figure, PointQuery
+from chart_claim_verifier.tools.cache import ReadingCache
+from chart_claim_verifier.tools.vlm_crop import VlmCropTool
 
 
 def test_offline_miss_is_reported_and_never_cached(tmp_path):
