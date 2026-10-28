@@ -59,7 +59,7 @@ class ReportAgent:
 
     def __init__(self, parser, controller: ClaimController, retrieval: RetrievalMode = "ours",
                  oracle: Callable[[str, str], str | None] | None = None, ref_bonus: float = 10.0,
-                 vocab_match: int = 80, llm_parser=None, ambiguous_rule: str = "either"):
+                 vocab_match: int = 80, llm_parser=None, ambiguous_rule: str = "either", legend_reader=None):
         if ambiguous_rule not in AMBIGUOUS_RULES:
             raise ValueError(f"unknown ambiguous_rule {ambiguous_rule!r}")
         self.ambiguous_rule = ambiguous_rule
@@ -67,6 +67,7 @@ class ReportAgent:
         self.llm_parser = llm_parser    # escalation target; None = rules only
         self.oracle = oracle            # (report_id, sentence) -> true figure_id; ablation only
         self.ref_bonus, self.vocab_match = ref_bonus, vocab_match
+        self.legend_reader = legend_reader  # fig -> legend names read by the VLM (U11b); None = OCR text only
 
     def ingest(self, pdf_path: str | Path, work_dir: str | Path, report_id: str | None = None) -> Report:
         return parse_pdf(pdf_path, work_dir, report_id)
@@ -108,7 +109,8 @@ class ReportAgent:
 
     # ------------------------------------------------------------------ main loop
     def run(self, report: Report) -> tuple[list[ClaimTrace], ReportMemory]:
-        mem = ReportMemory(report, FigureIndex(report.figures, self.ref_bonus, self.vocab_match))
+        mem = ReportMemory(report, FigureIndex(report.figures, self.ref_bonus, self.vocab_match,
+                                                  legend_reader=self.legend_reader))
         self.plan(mem)
         context = mem.context()
         planned, traces = [], []
@@ -197,8 +199,12 @@ class ReportAgent:
         f = figs[0]
         if claim.figure_hint is not None and f.number == claim.figure_hint:
             why = f"the sentence names Figure {claim.figure_hint}"
+            if (f.figure_id, claim.series) in mem.index.rescued:
+                why += "; " + mem.index.rescued[(f.figure_id, claim.series)] + ", so the tools must find the series"
         else:
             why = f"best text match that shows '{claim.series}' (scores {cands[:3]})"
+            if (f.figure_id, claim.series) in mem.index.rescued:
+                why = f"{mem.index.rescued[(f.figure_id, claim.series)]} (scores {cands[:3]})"
         plan = mem.plan.get(f.figure_id, {})
         if plan:
             why += f"; chart looks like: {plan.get('looks_like')}"

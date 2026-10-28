@@ -1,0 +1,11 @@
+# U17: extra grouped-bar calibration charts. On the fresh `holdout` split grouped bars (40% of its charts) were the weak spot, and their
+# calibration groups rested on 15 charts, below min_group_charts=20, so they were measured against the pooled (mostly line/bar) margin.
+#   chart-claim-verifier generate -c configs/exp/calib_grouped.yaml     (builds only the "calib_grouped" split)
+generator:
+  reports: {calib: 0, dev: 0, test: 0, style_shift: 0, calib_grouped: 12}
+paths:
+  data_dir: data/local/generated
+  splits_dir: data/local/splits
+  cache_db: cache/local.sqlite
+  calibration_dir: calibration_tables/local
+  runs_dir: runs/local

@@ -43,8 +43,10 @@ def metric_words(text: str) -> set[str]:
 class FigureIndex:
     def __init__(self, figures: list[Figure], ref_bonus: float = 10.0, vocab_match: int = 80,
                  embed: Callable[[str, list[str]], list[float]] | None = None, embed_weight: float = 2.0,
-                 ambiguity_ratio: float = 0.8):
+                 ambiguity_ratio: float = 0.8, legend_reader: Callable[[Figure], list[str] | None] | None = None):
         self.figures = figures
+        self.legend_reader = legend_reader              # VLM legend names, asked only when OCR text finds nothing (U11b)
+        self.rescued: dict[tuple[str, str], str] = {}   # (figure_id, series) -> how the figure was found despite OCR
         self.ref_bonus, self.vocab_match, self.ambiguity_ratio = ref_bonus, vocab_match, ambiguity_ratio
         self.embed, self.embed_weight = embed, embed_weight
         docs = [tokenize(figure_text(f)) or ["_"] for f in figures]
@@ -89,13 +91,48 @@ class FigureIndex:
                 return False
         return True
 
+    def _covering_with_legend(self, ranked, claim: ClaimSpec) -> list[tuple[Figure, float]]:
+        """OCR misread the legend: ask the VLM for the legend names of figures that match everything else (U11b)."""
+        if self.legend_reader is None:
+            return []
+        blank = claim.model_copy(update={"series": "", "series_b": None})
+        found = []
+        for f, score in ranked:
+            if not self.covers(f, blank):
+                continue
+            names = self.legend_reader(f)
+            if not names:
+                continue
+            aug = f.model_copy(update={"text_lines": f.text_lines + list(names)})
+            if self.covers(aug, claim):
+                found.append((f, score))
+                self.rescued[(f.figure_id, claim.series)] = "series name found in the legend read by the VLM"
+        return found
+
+    def cited_figure(self, claim: ClaimSpec) -> list[Figure]:
+        """The sentence names "Figure N" and that figure matches everything except the series name.
+
+        OCR misreads legends ("GRU" -> "GRY"), and the figure the author cites is a strong signal. Nothing is
+        decided here: the tools must still find the series, and if it is not there they fail and the TA decides.
+        Without a citation, "everything but the series matches" is true of true no-figure claims too (U11a).
+        """
+        if claim.figure_hint is None:
+            return []
+        blank = claim.model_copy(update={"series": "", "series_b": None})
+        return [f for f in self.figures if f.number == claim.figure_hint and self.covers(f, blank)]
+
     def locate(self, claim: ClaimSpec) -> tuple[list[Figure], list[tuple[str, float]]]:
         """Figures that could be meant: one if clear, two if ambiguous, none -> NO_FIGURE."""
         ranked = self.rank(claim.sentence, claim.figure_hint)
         cands = [(f.figure_id, round(float(s), 3)) for f, s in ranked]
         covering = [(f, s) for f, s in ranked if self.covers(f, claim)]
         if not covering:
-            return [], cands
+            covering = self._covering_with_legend(ranked, claim)
+        if not covering:
+            cited = self.cited_figure(claim)
+            for f in cited:
+                self.rescued[(f.figure_id, claim.series)] = f"Figure {f.number} is cited and OCR did not read the series name"
+            return cited, cands
         if claim.figure_hint is not None and covering[0][0].number == claim.figure_hint:
             return [covering[0][0]], cands                # an explicit "Figure N" settles it
         top = covering[0][1]

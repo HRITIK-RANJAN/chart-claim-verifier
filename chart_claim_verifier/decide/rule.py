@@ -24,12 +24,14 @@ class RuleConfig:
     min_readings: int = 2
     alpha: float = 0.10
     max_accept_margin: float = 0.03   # fraction of axis span; wider margin -> cannot tell, measure again
+    by_tool_set: bool = True          # U14: margins from the exact tools that gave the readings
+    drop_tied_legs: bool = True       # U10: a tool that reads both legs of a two-leg claim as one number gives no reading
 
     @classmethod
     def from_cfg(cls, cfg: dict) -> "RuleConfig":
         d = cfg["decision"]
         return cls(d["level_flag"], d["level_accept"], d["eps"], d["min_readings"], d["alpha"],
-                   d.get("max_accept_margin", 0.03))
+                   d.get("max_accept_margin", 0.03), d.get("by_tool_set", True), d.get("drop_tied_legs", True))
 
 
 def claim_gap(claimed: float, est: float, relation: str) -> float:
@@ -50,14 +52,15 @@ def decide(claim: ClaimSpec, tool_values: dict[str, float], chart_type: str, spa
 
     est, dis = estimate(values), disagreement(values)
     scale = dis + rc.eps * span                     # disagreement with a floor
-    group, q_flag = table.cutoff(chart_type, claim.claim_type, k, rc.level_flag)
-    _, q_acc = table.cutoff(chart_type, claim.claim_type, k, rc.level_accept)
+    tools = list(tool_values) if rc.by_tool_set else None
+    group, q_flag = table.cutoff(chart_type, claim.claim_type, k, rc.level_flag, tools)
+    _, q_acc = table.cutoff(chart_type, claim.claim_type, k, rc.level_accept, tools)
     m_flag, m_acc = q_flag * scale, q_acc * scale
     gap = claim_gap(claim.claimed_value, est, claim.relation)
     tol = claim.tolerance
 
     score = max(gap - tol, 0.0) / scale             # same scale as the calibration ratios
-    p = table.p_value(chart_type, claim.claim_type, k, score)
+    p = table.p_value(chart_type, claim.claim_type, k, score, tools)
 
     common = dict(estimate=est, disagreement=dis, gap=gap, margin_flag=m_flag, margin_accept=m_acc,
                   p_value=p, n_readings=k, calibration_group=group)

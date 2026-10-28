@@ -13,13 +13,14 @@ from collections import defaultdict
 from statistics import median
 
 from ..generator.tables import ChartTable
-from ..measure.aggregate import derived_value
+from ..measure.aggregate import derived_value, tool_value
 from ..schemas import Figure, PointQuery
 from ..tools.base import Tool
 from .fit import CalibrationItem
 
 
-def collect_figure(fig: Figure, table: ChartTable, tools: dict[str, Tool], rng: random.Random):
+def collect_figure(fig: Figure, table: ChartTable, tools: dict[str, Tool], rng: random.Random,
+                   drop_tied_legs: bool = True):
     from ..agent.situation import observe, x_on_tick
     span = fig.y_span or table.span
     situation = observe(fig)
@@ -42,19 +43,19 @@ def collect_figure(fig: Figure, table: ChartTable, tools: dict[str, Tool], rng: 
                            "_fail": fails, "_latency": lat, "_on_tick": x_on_tick(fig, [x]),
                            **{t: (v - table.value(s, x)) / table.span for t, v in vals.items()}})
 
-    items = [CalibrationItem(fig.chart_type, "point", table.value(s, x), vals, span, fig.figure_id)
+    items = [CalibrationItem(fig.chart_type, "point", table.value(s, x), vals, span, fig.image_path)
              for (s, x), vals in readings.items()]
 
     def derived(ctype: str, a: tuple[str, str], b: tuple[str, str]):
         va, vb = readings[a], readings[b]
         tv = {}
         for t in set(va) & set(vb):
-            d = derived_value(ctype, [va[t], vb[t]])
+            d = tool_value(ctype, [va[t], vb[t]], drop_tied_legs)
             if d is not None:
                 tv[t] = d
         truth = derived_value(ctype, [table.value(*a), table.value(*b)])
         if truth is not None and len(tv) >= 2:
-            items.append(CalibrationItem(fig.chart_type, ctype, truth, tv, span, fig.figure_id))
+            items.append(CalibrationItem(fig.chart_type, ctype, truth, tv, span, fig.image_path))
 
     names, xs = list(table.series), table.x_values
     n_pairs = max(1, len(readings) // 2)

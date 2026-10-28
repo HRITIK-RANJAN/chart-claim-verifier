@@ -130,9 +130,15 @@ def main(argv=None) -> None:
         pick = ("wrong_flag_rate", "coverage", "accuracy_when_decided", "missed_errors", "detection_limit_delta50",
                 "catch_rate_by_delta", "n_flagged")
         if "b1" in which or "b2" in which:
+            import time
+            t0 = time.perf_counter()
             b1 = b1_direct(traces, reports, ctx.llm)
+            secs = time.perf_counter() - t0
             save_traces(run / "B1.jsonl", b1)
             res["B1_direct"] = {k: summarize(join(b1, truths))[k] for k in pick}
+            n_calls = sum(t.decision.reason.startswith("B1") for t in b1)
+            res["B1_direct"].update({"model_calls": n_calls, "model_seconds": round(secs, 1),
+                                     "model_minutes": round(secs / 60, 1)})      # E-cost: what one VLM call per claim costs
             if "b2" in which:
                 pts = []
                 for tau in (50, 60, 70, 80, 90, 95):

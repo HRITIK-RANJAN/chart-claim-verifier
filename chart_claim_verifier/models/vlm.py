@@ -19,7 +19,7 @@ class LLM(Protocol):
     name: str
 
     def generate(self, prompt: str, images: Sequence = (), temperature: float = 0.0,
-                 max_new_tokens: int = 256, n: int = 1) -> list[str]: ...
+                 max_new_tokens: int = 256, n: int = 1, adapter: bool = False) -> list[str]: ...
 
 
 def best_device() -> str:
@@ -43,7 +43,9 @@ class VLM:
         from transformers import AutoModelForImageTextToText, AutoProcessor
 
         self.device = device or best_device()
+        self.base_name = model_id               # the adapter is used only for the chart-to-table task (adapter=True)
         self.name = model_id + (f"+{lora_adapter}" if lora_adapter else "")
+        self.has_adapter = bool(lora_adapter)
         torch_dtype = getattr(torch, dtype) if self.device != "cpu" else torch.float32
         kwargs = {"dtype": torch_dtype}
         if load_in_4bit and self.device == "cuda":
@@ -60,7 +62,8 @@ class VLM:
             self.model = PeftModel.from_pretrained(self.model, lora_adapter)
         self.model.eval()
 
-    def generate(self, prompt, images=(), temperature=0.0, max_new_tokens=256, n=1):
+    def generate(self, prompt, images=(), temperature=0.0, max_new_tokens=256, n=1, adapter=False):
+        import contextlib
         import torch
         from PIL import Image
 
@@ -76,7 +79,8 @@ class VLM:
             gen.update(temperature=temperature, top_p=0.95)
         else:
             gen.update(temperature=None, top_p=None, top_k=None)
-        with torch.inference_mode():
+        off = self.model.disable_adapter() if self.has_adapter and not adapter else contextlib.nullcontext()
+        with torch.inference_mode(), off:
             out = self.model.generate(**inputs, **gen)
         out = out[:, inputs["input_ids"].shape[1]:]
         return self.processor.batch_decode(out, skip_special_tokens=True)
@@ -90,8 +94,8 @@ class OfflineLLM:
     """Stand-in model for replays (`--offline`): answers nothing, so a missing reading is
     reported as `offline_miss` instead of silently loading the model."""
 
-    def __init__(self, name: str):
-        self.name = name
+    def __init__(self, name: str, base_name: str | None = None):
+        self.name, self.base_name = name, base_name or name
 
     def generate(self, *args, **kwargs):
         raise OfflineMiss("model call needed")
@@ -103,7 +107,7 @@ class ScriptedLLM:
     def __init__(self, respond: Callable[[str, Sequence, int], str], name: str = "scripted"):
         self.respond, self.name, self.calls = respond, name, 0
 
-    def generate(self, prompt, images=(), temperature=0.0, max_new_tokens=256, n=1):
+    def generate(self, prompt, images=(), temperature=0.0, max_new_tokens=256, n=1, adapter=False):
         out = []
         for _ in range(n):
             out.append(self.respond(prompt, images, self.calls))

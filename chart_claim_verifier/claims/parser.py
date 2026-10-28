@@ -16,7 +16,7 @@ from __future__ import annotations
 import re
 from typing import Literal
 
-from pydantic import BaseModel, ValidationError
+from pydantic import BaseModel, ValidationError, field_validator
 
 from ..models.vlm import LLM, extract_json
 from ..schemas import ClaimSpec
@@ -82,6 +82,8 @@ class RuleParser:
             n = _number_at(s, g["num"], m.start("num"))
             if n is None:
                 return None
+            if ctype == "point" and re.search(r"\b(points?|higher|lower|better|worse|than)\b", s[m.end("num"):], re.I):
+                return None          # a comparison cut short ("... higher on IMDB than on"), not a value at a point
             series, x = g["s"].strip(), g["x"].strip()
             sb, xb = (g.get("sb") or None), (g.get("xb") or None)
             if ctype == "difference_x":
@@ -103,6 +105,15 @@ class _LLMForm(BaseModel):
     series_b: str | None = None
     x_b: str | None = None
     number_as_written: str | None = None
+
+    @field_validator("series", "x", "series_b", "x_b", "number_as_written", mode="before")
+    @classmethod
+    def _numbers_as_text(cls, v):
+        """The model often writes an epoch as a JSON number (`"x": 14`). That is a right answer in the wrong type: all
+        24 LLM parse failures on the `phrasing` split were this (U16), and the retry repeated it."""
+        if isinstance(v, (int, float)) and not isinstance(v, bool):
+            return f"{v:g}"
+        return v
 
 
 PROMPT = """You turn one sentence from a student lab report into a form that can be checked against a chart.
@@ -132,10 +143,11 @@ class LLMParser:
     def __init__(self, llm: LLM):
         self.llm = llm
         self.last_raw: list[str] = []
+        self.last_errors: list[str] = []      # why each attempt was rejected (for the parse evaluation, U16)
 
     def parse(self, sentence: str, claim_id: str, context: str = "") -> ClaimSpec | None:
         error = ""
-        self.last_raw = []
+        self.last_raw, self.last_errors = [], []
         for _ in range(2):                                   # one retry with the error shown
             raw = self.llm.generate(PROMPT.format(context=context[:1500], sentence=sentence, error=error),
                                     max_new_tokens=200)[0]
@@ -156,6 +168,7 @@ class LLMParser:
                                  x_b=form.x_b, claimed_value=n.value, unit=unit, relation=n.relation,
                                  tolerance=n.tolerance, figure_hint=figure_hint(sentence))
             except (ValueError, ValidationError) as e:
+                self.last_errors.append(str(e))
                 error = f"\nYour previous answer was invalid: {str(e)[:200]}. Answer again with valid JSON."
         raise ParseError("llm_parse_failed")
 

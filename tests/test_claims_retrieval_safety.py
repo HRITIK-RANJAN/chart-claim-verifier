@@ -108,6 +108,39 @@ def test_explicit_reference_settles_ambiguity():
     assert [f.figure_id for f in figs] == ["fig1"]
 
 
+def test_cited_figure_survives_an_ocr_miss_of_the_series_name():
+    idx = FigureIndex(FIGS)
+    # "ViT-S" is not in fig2's OCR text here, but the sentence cites Figure 2 and everything else matches
+    figs = [_fig("fig2", 2, "line", ["Accuracy during training", "ResNet-50", "Epoch"], "Accuracy.")]
+    idx2 = FigureIndex(figs)
+    assert [f.figure_id for f in idx2.locate(_claim("ViT-S reaches 80.1% accuracy at epoch 10 (Figure 2)."))[0]] == ["fig2"]
+    assert idx2.locate(_claim("ViT-S reaches 80.1% accuracy at epoch 10."))[0] == []         # no citation: still NO_FIGURE
+    # the cited figure must still fit the metric: a loss chart does not serve an accuracy claim
+    assert idx.locate(_claim("XGBoost reaches 80.1% accuracy at epoch 10 (Figure 1)."))[0] == []
+
+
+def test_legend_names_rescue_an_ocr_miss_but_not_a_missing_series():
+    figs = [_fig("fig2", 2, "line", ["Accuracy during training", "ResNet-50", "Epoch"], "Accuracy.")]
+    asked = []
+
+    def reader(fig):
+        asked.append(fig.figure_id)
+        return ["ResNet-50", "ViT-S"]                   # the VLM read the legend OCR missed
+
+    idx = FigureIndex(figs, legend_reader=reader)
+    found, _ = idx.locate(_claim("ViT-S reaches 80.1% accuracy at epoch 10."))
+    assert [f.figure_id for f in found] == ["fig2"] and asked == ["fig2"]
+    assert "legend read by the VLM" in idx.rescued[("fig2", "ViT-S")]
+    assert idx.locate(_claim("XGBoost reaches 80.1% accuracy at epoch 10."))[0] == []    # not in the legend either
+
+
+def test_llm_parser_accepts_an_epoch_written_as_a_number():
+    raw = ('{"is_chart_claim": true, "claim_type": "point", "series": "MLP", "x": 14, "series_b": null, '
+           '"x_b": null, "number_as_written": "77.2%"}')
+    c = LLMParser(ScriptedLLM(lambda prompt, images, i: raw)).parse("Epoch 14 sees MLP post a validation accuracy of 77.2%.", "c1")
+    assert c.x == "14" and c.series == "MLP" and c.claimed_value == 77.2
+
+
 # ---------------------------------------------------------------- table parsing
 def test_parse_vlm_table_and_lookup():
     t = parse_table('Here: {"ResNet-50": {"CIFAR-10": "91.2%", "MNIST": 99}, "junk": 3}')
@@ -158,3 +191,22 @@ def test_baselines_with_scripted_model():
     votes = iter(['{"verdict": "SUPPORTED"}'] * 4 + ['{"verdict": "REFUTED"}'])
     assert b3_majority([t], reports, ScriptedLLM(lambda p, i, n: next(votes)))[0].decision.verdict == "NOT_SURE"
     assert b4_tools_no_rule([t], ScriptedLLM(lambda p, i, n: '{"verdict": "REFUTED"}'))[0].decision.verdict == "MISMATCH"
+
+
+def test_a_sentence_cut_by_a_page_break_is_joined():
+    from chart_claim_verifier.ingest.pdf_parser import merge_continued, split_sentences
+    blocks = [(1, 700, 715, "Results go here and are discussed in the text below. ViT-S scores 9 points higher on IMDB than on"),
+              (2, 28, 43, "SVHN (Figure 4)."),
+              (2, 60, 75, "Figure 4: Accuracy by dataset."),
+              (2, 90, 100, "3 Discussion"),
+              (2, 110, 125, "More text follows here and ends properly.")]
+    out = merge_continued(blocks)
+    assert out[0][3].endswith("higher on IMDB than on SVHN (Figure 4).") and len(out) == 4
+    assert split_sentences(out[0][3])[-1] == "ViT-S scores 9 points higher on IMDB than on SVHN (Figure 4)."
+    assert merge_continued([(1, 780, 790, "2"), (2, 28, 43, "A new page starts here.")])[0][3] == "2"   # footer not joined
+
+
+def test_a_cut_comparison_is_not_a_point_claim():
+    assert RuleParser().parse("ViT-S scores 9 points higher on IMDB than on", "c") is None
+    c = RuleParser().parse("ViT-S scores 9 points higher on IMDB than on SVHN (Figure 4).", "c")
+    assert c.claim_type == "difference" and c.x == "IMDB" and c.x_b == "SVHN"

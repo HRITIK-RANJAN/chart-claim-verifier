@@ -1,0 +1,11 @@
+# U12b: a second fresh split, for confirming the chart-count rule (§24.7). Same generator settings as the test split (the defaults); new reports (new seeds
+# come from the split name). Frozen config, one live run per policy, nothing tuned afterwards.
+#   chart-claim-verifier generate -c configs/exp/holdout2.yaml     (builds only the "holdout2" split)
+generator:
+  reports: {calib: 0, dev: 0, test: 0, style_shift: 0, holdout2: 20}
+paths:
+  data_dir: data/local/generated
+  splits_dir: data/local/splits
+  cache_db: cache/local.sqlite
+  calibration_dir: calibration_tables/local
+  runs_dir: runs/local

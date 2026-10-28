@@ -17,6 +17,16 @@ def disagreement(values: list[float]) -> float:
     return float(median(abs(v - m) for v in values))
 
 
+def tool_value(claim_type: str, operands: list[float], drop_ties: bool = True) -> float | None:
+    """One TOOL's value for a claim: `derived_value`, except that a tool that reads both legs of a two-leg claim as the
+    same number gives no value (U10). On calibration charts such ties are badly wrong 54-62% of the time for the VLM
+    tools, and two VLM tools tying together outvote a right reading. The truth still uses `derived_value`."""
+    if drop_ties and claim_type in ("difference", "relative_change") and len(operands) == 2 \
+            and operands[0] == operands[1]:
+        return None
+    return derived_value(claim_type, operands)
+
+
 def derived_value(claim_type: str, operands: list[float]) -> float | None:
     """Python arithmetic for derived claims, applied to ONE tool's readings.
 

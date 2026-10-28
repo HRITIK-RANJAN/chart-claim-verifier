@@ -12,7 +12,7 @@ from dataclasses import dataclass, field
 
 from ..calibration.store import CalibrationTable
 from ..decide.rule import RuleConfig, decide
-from ..measure.aggregate import derived_value
+from ..measure.aggregate import tool_value
 from ..schemas import ClaimSpec, Decision, Figure, PointQuery, Reading
 from ..tools.base import TableTool, Tool
 from .memory import ReportMemory
@@ -152,9 +152,11 @@ class ClaimController:
                 res.failed[name] = bad[0].error or "error"
                 step["result"] = f"error: {bad[0].error}"
                 continue
-            v = derived_value(claim.claim_type, [r.value for r in reads])
+            v = tool_value(claim.claim_type, [r.value for r in reads], self.rc.drop_tied_legs)
             if v is None:
-                step["result"] = "error: derived value undefined"
+                tied = len(reads) == 2 and reads[0].value == reads[1].value
+                step["result"] = "error: tied legs (both legs read as the same number)" if tied \
+                    else "error: derived value undefined"
                 continue
             res.tool_values[name] = v
             step["result"] = round(v, 4)

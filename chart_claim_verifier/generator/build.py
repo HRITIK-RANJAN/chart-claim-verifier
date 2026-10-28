@@ -11,7 +11,7 @@ from pathlib import Path
 
 from .report_builder import build_report
 
-SPLITS = ["calib", "calib_easy", "dev", "test", "style_shift", "phrasing"]
+SPLITS = ["calib", "calib_easy", "dev", "test", "style_shift", "phrasing", "holdout", "holdout2", "calib_grouped", "holdout3", "ft_pool"]
 NOVEL_SHARE = 0.6        # "phrasing" split: share of claims worded in ways the rule parser does not know (U8)
 
 
@@ -25,6 +25,8 @@ def build_split(split: str, n: int, root: Path, gen_cfg: dict, seed: int = 0) ->
         gen_cfg = {**gen_cfg, "novel_phrasing": NOVEL_SHARE}
     if split == "calib_easy":                    # U5: more easy charts, so every situation rests on >= 5 charts
         gen_cfg = {**gen_cfg, "hard_share": 0.0}
+    if split == "calib_grouped":                 # U17: grouped-bar groups rested on 15 charts (< 20), so they used the pooled margin
+        gen_cfg = {**gen_cfg, "force_kind": "grouped_bar", "injection_rate": 0.0}
     for i in range(n):
         rid = f"{split}_{i:03d}"
         rng = random.Random(f"{seed}-{split}-{i}")

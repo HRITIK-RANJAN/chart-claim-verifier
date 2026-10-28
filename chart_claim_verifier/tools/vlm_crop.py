@@ -55,7 +55,7 @@ class VlmCropTool(Tool):
     def __init__(self, llm: LLM, cache=None, temperature: float = 0.0, name: str = "vlm_crop"):
         super().__init__(cache)
         self.llm, self.temperature, self.name = llm, temperature, name   # "vlm_crop@s2" = sample 2 (E4)
-        self.version = f"v1:{llm.name}:t{temperature}:{name}"
+        self.version = f"v1:{getattr(llm, 'base_name', llm.name)}:t{temperature}:{name}"   # never the adapter: crops use the base model
 
     def _read(self, fig: Figure, q: PointQuery) -> float:
         crop, hint = make_crop(fig, q)

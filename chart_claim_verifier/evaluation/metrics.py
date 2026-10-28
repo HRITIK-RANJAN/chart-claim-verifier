@@ -94,6 +94,22 @@ def catch_rates(rows: list[Row]) -> dict[float, float]:
     return {d: sum(v) / len(v) for d, v in sorted(by.items())}
 
 
+def catch_rates_measured(rows: list[Row]) -> dict[float, dict]:
+    """Catch rate among planted errors that were MEASURED (two or more readings), and how many errors per size.
+
+    A claim handed off before it was measured says nothing about the detection limit; it is a coverage problem.
+    """
+    by = defaultdict(list)
+    for r in rows:
+        if r.gold == "error" and r.kind == "planted" and r.delta is not None:
+            by[round(abs(r.delta), 4)].append(r)
+    out = {}
+    for d, rs in sorted(by.items()):
+        m = [r for r in rs if r.trace.decision.n_readings >= 2]
+        out[d] = {"errors": len(rs), "measured": len(m), "caught": sum(r.verdict == "MISMATCH" for r in m)}
+    return out
+
+
 def detection_limit(rates: dict[float, float], level: float = 0.5) -> float | None:
     """Smallest planted error size caught at least `level` of the time (and every larger one too)."""
     sizes = sorted(rates)
@@ -126,8 +142,10 @@ def summarize(rows: list[Row]) -> dict:
     claims = [r for r in rows if r.gold in ("correct", "error", "no_figure")]
     decided = [r for r in claims if r.verdict in DECIDED]
     real = [r for r in claims if r.gold in ("correct", "error")]
-    in_margin = [abs(r.true_value - r.estimate) <= r.margin_flag for r in real
-                 if r.true_value is not None and r.estimate is not None and r.margin_flag not in (None, math.inf)]
+    measured = [r for r in real if r.true_value is not None and r.estimate is not None
+                and r.margin_flag not in (None, math.inf)]
+    in_margin = [abs(r.true_value - r.estimate) <= r.margin_flag for r in measured if r.figure_pred == r.figure_true]
+    wrong_figure = [r for r in measured if r.figure_pred != r.figure_true]
     parsed = [r for r in real if r.parse_ok]
     rates = catch_rates(rows)
     traces = [r.trace for r in claims]
@@ -155,7 +173,9 @@ def summarize(rows: list[Row]) -> dict:
         "detection_limit_delta50": detection_limit(rates),
         "missed_errors": _rate(sum(r.verdict == "CONSISTENT" for r in real if r.gold == "error"),
                                sum(r.gold == "error" for r in real)),
-        "margin_check": _rate(sum(in_margin), len(in_margin)),
+        "margin_check": _rate(sum(in_margin), len(in_margin)),           # claims read on the right figure only
+        "measured_on_wrong_figure": len(wrong_figure),                   # the margin cannot cover these
+        "catch_rate_measured": catch_rates_measured(rows),
         "retrieval_top1": _rate(sum(r.figure_pred == r.figure_true for r in real), len(real)),
         "no_figure_accuracy": _rate(sum(r.verdict == "NO_FIGURE" for r in claims if r.gold == "no_figure"),
                                     sum(r.gold == "no_figure" for r in claims)),

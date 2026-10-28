@@ -29,6 +29,25 @@ def split_sentences(text: str) -> list[str]:
     return [s.replace("§", ".").strip() for s in SENT_SPLIT.split(protected) if s.strip()]
 
 
+def merge_continued(blocks: list[tuple]) -> list[tuple]:
+    """Join a paragraph that a page break (or a figure) cut in the middle of a sentence.
+
+    Blocks are (page, y0, y1, text) in reading order. A block that is a full line of prose and stops without a full
+    stop ("... higher on IMDB than on") continues in the next block ("SVHN (Figure 4)."). Left unjoined, the first
+    half parsed as a different claim and was flagged (2 of the 3 wrong flags on holdout2 had this cause, §24.7).
+    Short blocks (page numbers, headers), headings and captions are never joined.
+    """
+    out: list[tuple] = []
+    for b in blocks:
+        prev = out[-1] if out else None
+        if (prev and len(prev[3]) >= 30 and prev[3][-1] not in ".!?:" and not HEADING_RE.match(prev[3])
+                and not CAPTION_RE.match(prev[3]) and not CAPTION_RE.match(b[3]) and not HEADING_RE.match(b[3])):
+            out[-1] = (prev[0], prev[1], prev[2] if b[0] != prev[0] else b[2], prev[3] + " " + b[3])
+        else:
+            out.append(b)
+    return out
+
+
 def parse_pdf(pdf_path: str | Path, out_dir: str | Path, report_id: str | None = None,
               analyse_figures: bool = True) -> Report:
     pdf_path, out_dir = Path(pdf_path), Path(out_dir)
@@ -51,7 +70,7 @@ def parse_pdf(pdf_path: str | Path, out_dir: str | Path, report_id: str | None =
             if b[6] == 0 and b[4].strip():
                 blocks.append((pno, b[1], b[3], " ".join(b[4].split())))
     images.sort()
-    blocks.sort()
+    blocks = merge_continued(sorted(blocks))
 
     figures: list[Figure] = []
     caption_ids = set()

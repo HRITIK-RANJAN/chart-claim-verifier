@@ -48,4 +48,4 @@ class VlmTableTool(TableTool):
         self.version = f"v1:{llm.name}"       # LoRA vs base -> different cache entries
 
     def extract_table(self, fig: Figure) -> Table:
-        return parse_table(self.llm.generate(PROMPT, [fig.image_path], max_new_tokens=768)[0])
+        return parse_table(self.llm.generate(PROMPT, [fig.image_path], max_new_tokens=768, adapter=True)[0])

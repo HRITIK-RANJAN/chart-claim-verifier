@@ -1,0 +1,12 @@
+# E6: LoRA fine-tuning pool, about 1,100 charts (370 reports x 2-4 figures). Fresh seeds (they come from the split name), no injected text.
+#   chart-claim-verifier generate -c configs/exp/ft_pool.yaml     (builds only the "ft_pool" split)
+generator:
+  reports: {calib: 0, dev: 0, test: 0, style_shift: 0, ft_pool: 370}
+  injection_rate: 0.0
+  clean_twins: false
+paths:
+  data_dir: data/local/generated
+  splits_dir: data/local/splits
+  cache_db: cache/local.sqlite
+  calibration_dir: calibration_tables/local
+  runs_dir: runs/local

@@ -1,0 +1,27 @@
+# E6: the LoRA chart-to-table adapter used by tool 2 (vlm_table) only; vlm_crop, the legend reader and the parser keep the base model.
+# Same settings as local_real.yaml, its own calibration table (the tool changed, so the table is re-fitted).
+generator:
+  reports: {calib: 12, dev: 0, test: 20, style_shift: 0}
+
+decision:
+  min_group_size: 30
+
+calibration:
+  splits: [calib, calib_easy]
+
+models:
+  lora_adapter: checkpoints/lora_chart2table
+
+tools:
+  enabled: [ocr_pixel, deplot, vlm_table, vlm_crop]
+
+agent:
+  policy: fixed_order
+  fixed_order: [ocr_pixel, deplot, vlm_table, vlm_crop]
+
+paths:
+  data_dir: data/local/generated
+  splits_dir: data/local/splits
+  cache_db: cache/local.sqlite
+  calibration_dir: calibration_tables/local_lora
+  runs_dir: runs/local

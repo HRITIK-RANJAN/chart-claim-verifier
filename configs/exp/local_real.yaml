@@ -8,7 +8,7 @@ decision:
   min_group_size: 30
 
 calibration:
-  splits: [calib, calib_easy]     # calib_easy: more easy charts (configs/exp/calib_easy.yaml)
+  splits: [calib, calib_easy]     # calib_easy: more easy charts (configs/exp/calib_easy.yaml). calib_grouped (U17) was measured and rejected, see §24.7
 
 tools:
   enabled: [ocr_pixel, deplot, vlm_table, vlm_crop]

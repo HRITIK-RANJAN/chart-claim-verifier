@@ -8,6 +8,7 @@ No chart is read, so the only model cost is the LLM parses. For each gold claim:
 Reported: how many sentences the rules recognised, how many escalated, per-field accuracy of each, LLM calls per report.
 """
 import argparse
+import re
 from collections import Counter
 from pathlib import Path
 
@@ -33,6 +34,20 @@ def fields_ok(c, g) -> dict:
             "tolerance": g.get("tolerance") is None or abs(c.tolerance - g["tolerance"]) < 1e-9}
 
 
+def failure_class(errors: list[str], raw: list[str]) -> str:
+    """Why an LLM parse failed (both attempts rejected): the class of the LAST rejection."""
+    e = (errors[-1] if errors else "").lower()
+    if "does not appear in the sentence" in e:
+        return "number_as_written not found in the sentence"
+    if "required" in e:
+        return "a required field is missing"
+    if "validation error" in e:
+        return "wrong field type / value"
+    if "json" in e or "expecting" in e or "no json" in e:
+        return "no valid JSON" + (" (cut off)" if raw and raw[-1].count("{") > raw[-1].count("}") else "")
+    return "other: " + e[:50]
+
+
 def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("-c", "--config", default=None)
@@ -43,6 +58,7 @@ def main() -> None:
     rules, llm = RuleParser(), None if args.rules_only else LLMParser(ctx.llm)
     acc = {"rules": Counter(), "agent": Counter()}
     n = n_rule = n_esc = n_llm_fail = llm_calls = 0
+    fails, examples = Counter(), {}
     dirs = report_dirs(ctx.data, args.split)
     for rd in dirs:
         report, truth = ingest(ctx, rd)
@@ -65,6 +81,9 @@ def main() -> None:
                     c2 = llm.parse(s.text, s.sentence_id, context)
                 except ParseError:
                     c2, n_llm_fail = None, n_llm_fail + 1
+                    k = failure_class(llm.last_errors, llm.last_raw)
+                    fails[k] += 1
+                    examples.setdefault(k, (s.text, llm.last_errors[-1:], [r[:160] for r in llm.last_raw[-1:]]))
                 llm_calls += len(llm.last_raw)
                 ok_agent = fields_ok(c2, g)
             for f in FIELDS:
@@ -73,6 +92,8 @@ def main() -> None:
     print(f"{args.split}: {len(dirs)} reports, {n} chart claims")
     print(f"  recognised by the rules: {n_rule} ({n_rule / max(n, 1):.0%});  escalated to the LLM parser: {n_esc};  "
           f"LLM parse failures: {n_llm_fail};  LLM calls: {llm_calls} ({llm_calls / max(len(dirs), 1):.1f} per report)")
+    for k, v in fails.most_common():
+        print(f"  LLM parse failure: {v:3d}  {k}   e.g. {examples[k]}")
     print(f"  {'field':12s} {'rules only':>11s} {'agent':>8s}")
     for f in FIELDS:
         print(f"  {f:12s} {acc['rules'][f] / max(n, 1):11.0%} {acc['agent'][f] / max(n, 1):8.0%}")

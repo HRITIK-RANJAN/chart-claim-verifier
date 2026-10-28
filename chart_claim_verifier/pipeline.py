@@ -44,7 +44,7 @@ class Context:
             m = self.cfg["models"]
             if self.offline:
                 from .models.vlm import OfflineLLM
-                self._llm = OfflineLLM(m["vlm"] + (f"+{m['lora_adapter']}" if m.get("lora_adapter") else ""))
+                self._llm = OfflineLLM(m["vlm"] + (f"+{m['lora_adapter']}" if m.get("lora_adapter") else ""), m["vlm"])
             else:
                 from .models.vlm import VLM
                 self._llm = VLM(m["vlm"], m.get("dtype", "float16"), m.get("lora_adapter"))
@@ -99,6 +99,7 @@ def calibrate(ctx: Context, split: str | None = None, name: str | None = None) -
         "n_points": len(errors), "n_items": len(items),
     }
     table = fit_table(items, d["eps"], d["min_group_size"], order=order, seed=cfg["seed"],
+                      min_group_charts=d.get("min_group_charts", 0),
                       meta={"tools": names, "tool_error": extras["tool_error"],
                             "tool_costs": {n: t.cost for n, t in tools.items()},
                             "models": cfg["models"]})
@@ -126,7 +127,8 @@ def _collect(ctx: Context, splits: list[str], tools: dict, rng: random.Random) -
         for fig in report.figures:
             if fig.number not in by_num:
                 continue
-            it, er = collect_figure(fig, ChartTable.from_dict(by_num[fig.number]["table"]), tools, rng)
+            it, er = collect_figure(fig, ChartTable.from_dict(by_num[fig.number]["table"]), tools, rng,
+                                  ctx.cfg["decision"].get("drop_tied_legs", True))
             items += it
             errors += er
     return items, errors
@@ -172,6 +174,12 @@ def load_profile(ctx: Context, name: str | None = None) -> dict:
 def load_table(ctx: Context, name: str | None = None) -> CalibrationTable:
     name = name or "_".join(ctx.cfg["tools"]["enabled"])
     return CalibrationTable.load(Path(ctx.cfg["paths"]["calibration_dir"]) / f"{name}.json")
+
+
+def make_legend_reader(ctx: Context):
+    """Legend names for the figure index (U11b): one cached VLM call per figure; offline, only cached answers."""
+    from .tools.legend import read_legend
+    return lambda fig: read_legend(ctx.llm, fig, ctx.cache)
 
 
 def make_repairs(ctx: Context) -> dict:
@@ -235,7 +243,8 @@ def run_split(ctx: Context, split: str, table: CalibrationTable, policy: str | N
             oracle_map[(truth["report_id"], c["sentence"].strip())] = c.get("figure_id")
     agent = ReportAgent(prs, controller, retrieval, oracle=lambda rid, s: oracle_map.get((rid, s.strip())),
                         ref_bonus=cfg["retrieval"]["ref_bonus"], vocab_match=cfg["retrieval"]["vocab_match"],
-                        llm_parser=llm_parser, ambiguous_rule=cfg["agent"].get("ambiguous_rule", "either"))
+                        llm_parser=llm_parser, ambiguous_rule=cfg["agent"].get("ambiguous_rule", "either"),
+                        legend_reader=make_legend_reader(ctx) if cfg["retrieval"].get("legend_names") else None)
     for rd, truth in zip(dirs, truths):
         report, _ = ingest(ctx, rd)
         tr, mem = agent.run(report)

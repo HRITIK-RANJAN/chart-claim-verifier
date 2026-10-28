@@ -1,0 +1,573 @@
+{
+ "situations": {
+  "bar|easy": {
+   "ocr_pixel": {
+    "n": 118,
+    "n_figures": 16,
+    "success": 0.9661016949152542,
+    "median_error": 0.0007956336978875455,
+    "p90_error": 0.001867732775670973,
+    "big_error": 0.0,
+    "top_failures": {
+     "occluded_by_legend": 4
+    },
+    "success_on_tick": 0.9736842105263158,
+    "success_off_tick": 0.9523809523809523
+   },
+   "deplot": {
+    "n": 118,
+    "n_figures": 16,
+    "success": 1.0,
+    "median_error": 0.0009999999999999432,
+    "p90_error": 0.0030965003855508272,
+    "big_error": 0.0,
+    "top_failures": {},
+    "success_on_tick": 1.0,
+    "success_off_tick": 1.0
+   },
+   "vlm_table": {
+    "n": 118,
+    "n_figures": 16,
+    "success": 1.0,
+    "median_error": 0.0020000000000000282,
+    "p90_error": 0.009184307232133374,
+    "big_error": 0.0,
+    "top_failures": {},
+    "success_on_tick": 1.0,
+    "success_off_tick": 1.0
+   },
+   "vlm_crop": {
+    "n": 118,
+    "n_figures": 16,
+    "success": 1.0,
+    "median_error": 0.0021059292616831572,
+    "p90_error": 0.012135602365881525,
+    "big_error": 0.0,
+    "top_failures": {},
+    "success_on_tick": 1.0,
+    "success_off_tick": 1.0
+   }
+  },
+  "*": {
+   "ocr_pixel": {
+    "n": 1583,
+    "n_figures": 85,
+    "success": 0.5938092229943146,
+    "median_error": 0.0014470471151463381,
+    "p90_error": 0.0052915816044078546,
+    "big_error": 0.00851063829787234,
+    "top_failures": {
+     "series_not_found": 274,
+     "y_fit_failed": 134,
+     "occluded_by_legend": 80
+    },
+    "success_on_tick": 0.7606635071090048,
+    "success_off_tick": 0.4925619834710744
+   },
+   "deplot": {
+    "n": 1583,
+    "n_figures": 85,
+    "success": 0.7681617182564751,
+    "median_error": 0.0027137042062414917,
+    "p90_error": 0.008031097034264398,
+    "big_error": 0.04276315789473684,
+    "top_failures": {
+     "x_not_found": 282,
+     "series_not_found": 85
+    },
+    "success_on_tick": 0.9691943127962085,
+    "success_off_tick": 0.5421487603305785
+   },
+   "vlm_table": {
+    "n": 1583,
+    "n_figures": 85,
+    "success": 0.7599494630448516,
+    "median_error": 0.012000000000000028,
+    "p90_error": 0.13195046113306985,
+    "big_error": 0.228595178719867,
+    "top_failures": {
+     "x_not_found": 278,
+     "series_not_found": 102
+    },
+    "success_on_tick": 0.9644549763033176,
+    "success_off_tick": 0.5272727272727272
+   },
+   "vlm_crop": {
+    "n": 1583,
+    "n_figures": 85,
+    "success": 1.0,
+    "median_error": 0.011806375442738966,
+    "p90_error": 0.11221849017124608,
+    "big_error": 0.19583070120025267,
+    "top_failures": {},
+    "success_on_tick": 1.0,
+    "success_off_tick": 1.0
+   }
+  },
+  "bar|hard": {
+   "ocr_pixel": {
+    "n": 671,
+    "n_figures": 45,
+    "success": 0.7004470938897168,
+    "median_error": 0.0015897051798009006,
+    "p90_error": 0.006339899718192442,
+    "big_error": 0.00851063829787234,
+    "top_failures": {
+     "series_not_found": 67,
+     "occluded_by_legend": 54,
+     "y_fit_failed": 35
+    },
+    "success_on_tick": 0.7824858757062146,
+    "success_off_tick": 0.6843971631205674
+   },
+   "deplot": {
+    "n": 671,
+    "n_figures": 45,
+    "success": 0.9582712369597616,
+    "median_error": 0.0030000000000001137,
+    "p90_error": 0.008000000000000099,
+    "big_error": 0.038880248833592534,
+    "top_failures": {
+     "x_not_found": 14,
+     "series_not_found": 14
+    },
+    "success_on_tick": 0.9971751412429378,
+    "success_off_tick": 0.9184397163120568
+   },
+   "vlm_table": {
+    "n": 671,
+    "n_figures": 45,
+    "success": 0.9463487332339792,
+    "median_error": 0.012000000000000028,
+    "p90_error": 0.09777208381680438,
+    "big_error": 0.2173228346456693,
+    "top_failures": {
+     "x_not_found": 23,
+     "series_not_found": 13
+    },
+    "success_on_tick": 0.9943502824858758,
+    "success_off_tick": 0.8936170212765957
+   },
+   "vlm_crop": {
+    "n": 671,
+    "n_figures": 45,
+    "success": 1.0,
+    "median_error": 0.007000000000000029,
+    "p90_error": 0.04200000000000003,
+    "big_error": 0.08643815201192251,
+    "top_failures": {},
+    "success_on_tick": 1.0,
+    "success_off_tick": 1.0
+   }
+  },
+  "line|hard": {
+   "ocr_pixel": {
+    "n": 749,
+    "n_figures": 20,
+    "success": 0.4165554072096128,
+    "median_error": 0.001621674315895427,
+    "p90_error": 0.004519998970068378,
+    "big_error": 0.01282051282051282,
+    "top_failures": {
+     "series_not_found": 207,
+     "y_fit_failed": 99,
+     "two_lines_at_x": 66
+    },
+    "success_on_tick": 0.6711590296495957,
+    "success_off_tick": 0.22580645161290322
+   },
+   "deplot": {
+    "n": 749,
+    "n_figures": 20,
+    "success": 0.5473965287049399,
+    "median_error": 0.002324380165289344,
+    "p90_error": 0.017129171040376225,
+    "big_error": 0.06585365853658537,
+    "top_failures": {
+     "x_not_found": 268,
+     "series_not_found": 71
+    },
+    "success_on_tick": 0.9326145552560647,
+    "success_off_tick": 0.08960573476702509
+   },
+   "vlm_table": {
+    "n": 749,
+    "n_figures": 20,
+    "success": 0.540720961281709,
+    "median_error": 0.02398656752218757,
+    "p90_error": 0.22407175197611062,
+    "big_error": 0.3358024691358025,
+    "top_failures": {
+     "x_not_found": 255,
+     "series_not_found": 89
+    },
+    "success_on_tick": 0.9245283018867925,
+    "success_off_tick": 0.08243727598566308
+   },
+   "vlm_crop": {
+    "n": 749,
+    "n_figures": 20,
+    "success": 1.0,
+    "median_error": 0.02607799138819815,
+    "p90_error": 0.1798880082761398,
+    "big_error": 0.33511348464619495,
+    "top_failures": {},
+    "success_on_tick": 1.0,
+    "success_off_tick": 1.0
+   }
+  },
+  "line|easy": {
+   "ocr_pixel": {
+    "n": 45,
+    "n_figures": 4,
+    "success": 0.9777777777777777,
+    "median_error": 0.0010569566143606773,
+    "p90_error": 0.0022672745456102047,
+    "big_error": 0.0,
+    "top_failures": {
+     "occluded_by_legend": 1
+    },
+    "success_on_tick": 0.9767441860465116,
+    "success_off_tick": null
+   },
+   "deplot": {
+    "n": 45,
+    "n_figures": 4,
+    "success": 1.0,
+    "median_error": 0.002244668911335769,
+    "p90_error": 0.004467438613779926,
+    "big_error": 0.0,
+    "top_failures": {},
+    "success_on_tick": 1.0,
+    "success_off_tick": null
+   },
+   "vlm_table": {
+    "n": 45,
+    "n_figures": 4,
+    "success": 1.0,
+    "median_error": 0.00620842572062075,
+    "p90_error": 0.015521064301552014,
+    "big_error": 0.022222222222222223,
+    "top_failures": {},
+    "success_on_tick": 1.0,
+    "success_off_tick": null
+   },
+   "vlm_crop": {
+    "n": 45,
+    "n_figures": 4,
+    "success": 1.0,
+    "median_error": 0.00897867564534244,
+    "p90_error": 0.026506254961539463,
+    "big_error": 0.022222222222222223,
+    "top_failures": {},
+    "success_on_tick": 1.0,
+    "success_off_tick": null
+   }
+  }
+ },
+ "cost": {
+  "ocr_pixel": {
+   "seconds_per_read": 0.0017409580032108352,
+   "seconds_per_figure": 0.03730583697324619
+  },
+  "deplot": {
+   "seconds_per_read": 2.1041996660642326e-05,
+   "seconds_per_figure": 9.698415458002273
+  },
+  "vlm_table": {
+   "seconds_per_read": 6.375004886649549e-06,
+   "seconds_per_figure": 19.237285958006396
+  },
+  "vlm_crop": {
+   "seconds_per_read": 4.023702749997028,
+   "seconds_per_figure": 56.164872708002804
+  }
+ },
+ "error_correlation": {
+  "ocr_pixel~deplot": 0.09225874010357416,
+  "ocr_pixel~vlm_table": -0.005781469290131753,
+  "ocr_pixel~vlm_crop": 0.24737579827908804,
+  "deplot~vlm_table": 0.18640548145510616,
+  "deplot~vlm_crop": 0.32680759673271126,
+  "vlm_table~vlm_crop": 0.34430553211791504
+ },
+ "pairs": {
+  "*": {
+   "ocr_pixel~deplot": {
+    "both": 872,
+    "agree": 863,
+    "agree_wrong": 1,
+    "wrong_when_agree": 0.0011587485515643105,
+    "figures": 76,
+    "figures_wrong": 1
+   },
+   "ocr_pixel~vlm_table": {
+    "both": 871,
+    "agree": 713,
+    "agree_wrong": 1,
+    "wrong_when_agree": 0.001402524544179523,
+    "figures": 73,
+    "figures_wrong": 1
+   },
+   "ocr_pixel~vlm_crop": {
+    "both": 940,
+    "agree": 835,
+    "agree_wrong": 3,
+    "wrong_when_agree": 0.003592814371257485,
+    "figures": 76,
+    "figures_wrong": 1
+   },
+   "deplot~vlm_table": {
+    "both": 1181,
+    "agree": 821,
+    "agree_wrong": 7,
+    "wrong_when_agree": 0.008526187576126675,
+    "figures": 85,
+    "figures_wrong": 5
+   },
+   "deplot~vlm_crop": {
+    "both": 1216,
+    "agree": 1002,
+    "agree_wrong": 14,
+    "wrong_when_agree": 0.013972055888223553,
+    "figures": 85,
+    "figures_wrong": 8
+   },
+   "vlm_table~vlm_crop": {
+    "both": 1203,
+    "agree": 809,
+    "agree_wrong": 26,
+    "wrong_when_agree": 0.032138442521631644,
+    "figures": 85,
+    "figures_wrong": 16
+   }
+  },
+  "bar|easy": {
+   "ocr_pixel~deplot": {
+    "both": 114,
+    "agree": 114,
+    "agree_wrong": 0,
+    "wrong_when_agree": 0.0,
+    "figures": 16,
+    "figures_wrong": 0
+   },
+   "ocr_pixel~vlm_table": {
+    "both": 114,
+    "agree": 114,
+    "agree_wrong": 0,
+    "wrong_when_agree": 0.0,
+    "figures": 16,
+    "figures_wrong": 0
+   },
+   "ocr_pixel~vlm_crop": {
+    "both": 114,
+    "agree": 114,
+    "agree_wrong": 0,
+    "wrong_when_agree": 0.0,
+    "figures": 16,
+    "figures_wrong": 0
+   },
+   "deplot~vlm_table": {
+    "both": 118,
+    "agree": 117,
+    "agree_wrong": 0,
+    "wrong_when_agree": 0.0,
+    "figures": 16,
+    "figures_wrong": 0
+   },
+   "deplot~vlm_crop": {
+    "both": 118,
+    "agree": 118,
+    "agree_wrong": 0,
+    "wrong_when_agree": 0.0,
+    "figures": 16,
+    "figures_wrong": 0
+   },
+   "vlm_table~vlm_crop": {
+    "both": 118,
+    "agree": 117,
+    "agree_wrong": 0,
+    "wrong_when_agree": 0.0,
+    "figures": 16,
+    "figures_wrong": 0
+   }
+  },
+  "bar|hard": {
+   "ocr_pixel~deplot": {
+    "both": 456,
+    "agree": 450,
+    "agree_wrong": 0,
+    "wrong_when_agree": 0.0,
+    "figures": 40,
+    "figures_wrong": 0
+   },
+   "ocr_pixel~vlm_table": {
+    "both": 455,
+    "agree": 351,
+    "agree_wrong": 1,
+    "wrong_when_agree": 0.002849002849002849,
+    "figures": 39,
+    "figures_wrong": 1
+   },
+   "ocr_pixel~vlm_crop": {
+    "both": 470,
+    "agree": 438,
+    "agree_wrong": 0,
+    "wrong_when_agree": 0.0,
+    "figures": 40,
+    "figures_wrong": 0
+   },
+   "deplot~vlm_table": {
+    "both": 618,
+    "agree": 441,
+    "agree_wrong": 6,
+    "wrong_when_agree": 0.013605442176870748,
+    "figures": 45,
+    "figures_wrong": 4
+   },
+   "deplot~vlm_crop": {
+    "both": 643,
+    "agree": 565,
+    "agree_wrong": 11,
+    "wrong_when_agree": 0.019469026548672566,
+    "figures": 45,
+    "figures_wrong": 5
+   },
+   "vlm_table~vlm_crop": {
+    "both": 635,
+    "agree": 434,
+    "agree_wrong": 15,
+    "wrong_when_agree": 0.03456221198156682,
+    "figures": 45,
+    "figures_wrong": 11
+   }
+  },
+  "line|easy": {
+   "ocr_pixel~deplot": {
+    "both": 44,
+    "agree": 44,
+    "agree_wrong": 0,
+    "wrong_when_agree": 0.0,
+    "figures": 4,
+    "figures_wrong": 0
+   },
+   "ocr_pixel~vlm_table": {
+    "both": 44,
+    "agree": 43,
+    "agree_wrong": 0,
+    "wrong_when_agree": 0.0,
+    "figures": 4,
+    "figures_wrong": 0
+   },
+   "ocr_pixel~vlm_crop": {
+    "both": 44,
+    "agree": 43,
+    "agree_wrong": 0,
+    "wrong_when_agree": 0.0,
+    "figures": 4,
+    "figures_wrong": 0
+   },
+   "deplot~vlm_table": {
+    "both": 45,
+    "agree": 43,
+    "agree_wrong": 0,
+    "wrong_when_agree": 0.0,
+    "figures": 4,
+    "figures_wrong": 0
+   },
+   "deplot~vlm_crop": {
+    "both": 45,
+    "agree": 42,
+    "agree_wrong": 0,
+    "wrong_when_agree": 0.0,
+    "figures": 4,
+    "figures_wrong": 0
+   },
+   "vlm_table~vlm_crop": {
+    "both": 45,
+    "agree": 43,
+    "agree_wrong": 0,
+    "wrong_when_agree": 0.0,
+    "figures": 4,
+    "figures_wrong": 0
+   }
+  },
+  "line|hard": {
+   "ocr_pixel~deplot": {
+    "both": 258,
+    "agree": 255,
+    "agree_wrong": 1,
+    "wrong_when_agree": 0.00392156862745098,
+    "figures": 16,
+    "figures_wrong": 1
+   },
+   "ocr_pixel~vlm_table": {
+    "both": 258,
+    "agree": 205,
+    "agree_wrong": 0,
+    "wrong_when_agree": 0.0,
+    "figures": 14,
+    "figures_wrong": 0
+   },
+   "ocr_pixel~vlm_crop": {
+    "both": 312,
+    "agree": 240,
+    "agree_wrong": 3,
+    "wrong_when_agree": 0.0125,
+    "figures": 16,
+    "figures_wrong": 1
+   },
+   "deplot~vlm_table": {
+    "both": 400,
+    "agree": 220,
+    "agree_wrong": 1,
+    "wrong_when_agree": 0.004545454545454545,
+    "figures": 20,
+    "figures_wrong": 1
+   },
+   "deplot~vlm_crop": {
+    "both": 410,
+    "agree": 277,
+    "agree_wrong": 3,
+    "wrong_when_agree": 0.010830324909747292,
+    "figures": 20,
+    "figures_wrong": 3
+   },
+   "vlm_table~vlm_crop": {
+    "both": 405,
+    "agree": 215,
+    "agree_wrong": 11,
+    "wrong_when_agree": 0.05116279069767442,
+    "figures": 20,
+    "figures_wrong": 5
+   }
+  }
+ },
+ "failure_scope": {
+  "ocr_pixel": {
+   "series_not_found": "series",
+   "occluded_by_legend": "point",
+   "legend_not_found": "figure",
+   "two_lines_at_x": "point",
+   "line_not_continuous": "point",
+   "y_fit_failed": "figure",
+   "x_not_found": "point",
+   "colour_ambiguous": "series",
+   "line_not_found_at_x": "point"
+  },
+  "deplot": {
+   "x_not_found": "point",
+   "series_not_found": "series"
+  },
+  "vlm_table": {
+   "x_not_found": "point",
+   "series_not_found": "series"
+  },
+  "vlm_crop": {}
+ },
+ "settings": {
+  "big_error": 0.05,
+  "agree": 0.03
+ },
+ "repairs": {}
+}

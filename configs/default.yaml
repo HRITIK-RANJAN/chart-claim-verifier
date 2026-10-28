@@ -26,12 +26,18 @@ decision:
   max_tool_calls: 8
   alpha: 0.10             # BH target wrong-flag rate
   min_group_size: 200     # D6: smaller calibration groups fall back to coarser ones
+  min_group_charts: 20    # a group rests on its charts, not its points: fewer than 20 charts -> coarser group (§24.7)
   batch_check: true
+  by_tool_set: false      # U14 (rejected): margins fitted on the exact tools used. Replay: dev wrong flags 1.4 -> 4.1%, margin check 98.8 -> 93.2%.
+                          # A pair that stopped early *because it agreed* is a selected sample; the pooled margin is the buffer against that.
+  drop_tied_legs: true    # U10: a tool that reads both legs of a difference / relative change as one number gives no reading
 
 retrieval:
   ref_bonus: 10.0         # explicit "Figure N" in the sentence
   min_score: 0.5          # below this -> NO_FIGURE
   vocab_match: 80         # rapidfuzz score for series/x to count as "in this figure"
+  legend_names: true      # OCR found no figure: ask the VLM for the legend of near-miss figures (U11b pilot: 5 of 7 wrong
+                          # NO_FIGUREs recovered, 0 of 23 right ones invented; one cached call per figure)
 
 agent:
   policy: fixed_order     # all_tools | fixed_order | calibration_informed | informed | llm

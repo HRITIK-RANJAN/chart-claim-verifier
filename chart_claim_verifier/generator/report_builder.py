@@ -44,7 +44,7 @@ def build_report(report_id: str, rng: random.Random, out_dir: Path, gen_cfg: dic
     for i in range(n_figs):
         fid, number = f"fig{i + 1}", i + 1
         hard = rng.random() < gen_cfg.get("hard_share", 0.0)
-        table: ChartTable = make_table(rng, f"{report_id}_{fid}", hard=hard)
+        table: ChartTable = make_table(rng, f"{report_id}_{fid}", kind=gen_cfg.get("force_kind"), hard=hard)
         img = out_dir / f"{fid}.png"
         render(table, sample_style(rng, held_out, hard), img)
         n_claims = rng.randint(*gen_cfg["claims_per_figure"])

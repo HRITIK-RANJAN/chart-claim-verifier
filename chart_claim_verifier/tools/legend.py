@@ -18,7 +18,7 @@ PROMPT = ("List the legend entries of this chart from top to bottom, exactly as 
 
 def read_legend(llm: LLM, fig: Figure, cache: ReadingCache | None = None) -> list[str] | None:
     """The legend entries top to bottom, or None. One VLM call per figure; the answer is cached."""
-    key = ("legend", f"v1:{llm.name}", image_key(fig.image_path), "__legend__", "")
+    key = ("legend", f"v1:{getattr(llm, 'base_name', llm.name)}", image_key(fig.image_path), "__legend__", "")
     hit = cache.get(key) if cache else None
     if hit is not None:
         return hit.get("names")
